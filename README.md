@@ -25,26 +25,32 @@ npm start
 
 ## 一小段語言
 
+中文關鍵字、型別註記與「喵」內建可以混著用，兩個引擎輸出相同：
+
 ```text
-fn counter(start: number): fn(number) -> number {
-  let value: number = start;
-  return fn(step: number): number {
-    value = value + step;
-    return value;
+函式 計數器(起始: 數字): 函式(數字) -> 數字 {
+  令 值: 數字 = 起始;
+  回傳 函式(增加: 數字): 數字 {
+    值 = 值 + 增加;
+    回傳 值;
   };
 }
 
-let count: fn(number) -> number = counter(10);
-print(count(1));  // 11
-print(count(5));  // 16
+令 數 = 計數器(10);
+喵(數(1));                        // 11
+喵(數(5));                        // 16
 
-let i = 0;
-while (i < 5) {
+令 i = 0;
+當 (i < 5) {
   i = i + 1;
-  if (i == 3) { continue; }
-  print(i);
+  若 (i == 3) { 繼續; }           // 跳過 3
+  喵(喵重複("喵", i));            // 喵 / 喵喵 / 喵喵喵喵 / 喵喵喵喵喵
 }
+
+喵("完成：", 喵選(數(0) > 20, "大隻貓", "小隻貓"));  // 完成： 小隻貓
 ```
+
+英文關鍵字完全等價，可自由混用：`let`＝`令`、`fn`＝`函式`、`if`＝`如果`、`else`＝`否則`、`while`＝`當`、`return`＝`回傳`、`break`＝`中斷`、`continue`＝`繼續`、`and`／`or`＝`且`／`或`、`true`／`false`／`null`＝`真`／`假`／`空`；型別另有 `數字`、`字串`、`布林`、`任意`。
 
 ### 已實作
 
@@ -54,7 +60,8 @@ while (i < 5) {
 - 可選的 `: number` / `: string` / `: boolean` / `: null` / `: any` 註記，以及結構式 `fn(number) -> number` 型別。
 - 靜態檢查初始化、賦值、參數、回傳值、運算子與 return 控制流程；`any` 邊界另有執行期檢查。
 - 四則運算、餘數、比較、相等判斷、短路 `and/or`。
-- `print`、`len`、`str`、`number`、`type`、`sqrt`、`assert`。
+- `print`、`len`、`str`、`number`、`type`、`sqrt`、`assert`，以及一整組「喵」內建：`喵`（`print` 別名）、`喵喵`（加喵前綴輸出）、`喵長`／`喵字`／`喵數`／`喵型`／`喵根`／`喵驗`（對應英文別名）、`喵黏`（串接）、`喵重複`（重複字串）、`喵選`（三元運算）、`喵叫`。
+- 英文與中文關鍵字可混用：`令`＝`let`、`函式`＝`fn`、`如果`＝`if`、`當`＝`while`、`回傳`＝`return`、`喵` 輸出。識別字也接受中文。
 - 行註解、可巢狀區塊註解、JSON 風格字串 escape、Unicode 字串。
 - 靜態名稱解析：未宣告變數、重複 binding、不合法的 return/break/continue。
 - 原始碼 offset、行／列位置、錯誤摘要與函式呼叫堆疊。

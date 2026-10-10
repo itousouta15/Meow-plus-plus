@@ -59,7 +59,7 @@ test('runtime diagnostic contains source location and call stack', async ({ page
   await page.locator('#run').click();
   await expect(page.locator('#result-badge')).toHaveText('ERROR');
   await expect(page.locator('#diagnostic')).toContainText('error.itou:2:12');
-  await expect(page.locator('#diagnostic')).toContainText('division by zero');
+  await expect(page.locator('#diagnostic')).toContainText('除以零');
   await expect(page.locator('#diagnostic')).toContainText('at ratio');
   await expect(page.locator('#gutter-inner .active-line')).toHaveText('2');
 });
@@ -127,6 +127,6 @@ test('typed source fails before execution and displays the exact static diagnost
   await page.locator('#run').click();
   await expect(page.locator('#result-badge')).toHaveText('ERROR');
   await expect(page.locator('#diagnostic')).toContainText('custom.itou:2:17: type:');
-  await expect(page.locator('#diagnostic')).toContainText('expected number, got string');
+  await expect(page.locator('#diagnostic')).toContainText('預期 number，得到 string');
   await expect(page.locator('#stdout')).not.toContainText('must not execute');
 });

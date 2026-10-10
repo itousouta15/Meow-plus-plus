@@ -38,7 +38,7 @@ test('function contracts preserve identity and can adapt variadic built-ins', ()
 test('unannotated source keeps dynamic semantics; explicit check analyzes it', () => {
   both('let x = 1; x = "now a string"; print(x);', ['now a string']);
   assert.throws(() => check('print("x" + 1);'), error => error.phase === 'type');
-  sameError('print("x" + 1);', 'runtime', /expected number/);
+  sameError('print("x" + 1);', 'runtime', /預期 number/);
 });
 test('check returns signatures without executing source effects', () => {
   const report = check('fn add(a: number, b: number): number { return a + b; } let name: string = "itou"; while (true) {}');
@@ -48,22 +48,23 @@ test('check returns signatures without executing source effects', () => {
 });
 
 const staticErrors = [
-  ['let n: number = "x";', /initializer.*expected number, got string/],
-  ['let n: number = 1; n = false;', /assignment.*expected number, got boolean/],
-  ['fn f(n: number): number { return n; } f("x");', /argument 1.*expected number, got string/],
-  ['fn f(n: number): number { return n; } f();', /expects 1 argument/],
-  ['fn f(): number { return "x"; }', /return value.*expected number, got string/],
-  ['fn f(flag: boolean): number { if (flag) return 1; }', /may fall through.*got null/],
-  ['fn f(): number { while (true) { break; } }', /may fall through/],
-  ['let f: fn(number) -> number = fn(x: string): number { return len(x); };', /initializer.*fn/],
-  ['let f: fn(fn(number) -> number) -> number = fn(g: fn(string) -> number): number { return g("x"); };', /initializer.*fn/],
-  ['let flag: number = 1; if (flag) print(1);', /if condition.*boolean/],
-  ['let flag: string = "x"; while (flag) {}', /while condition.*boolean/],
-  ['let n: number = 2; print(n + "x");', /two numbers or two strings/],
-  ['let n: number = 2; print(n and true);', /expected boolean/],
-  ['let n: number = 2; n();', /cannot call number/],
-  ['let n: Missing = 1;', /unknown type 'Missing'/],
-  ['let n: any = 1; print = fn() {};', /cannot assign built-in/],
+  ['let n: number = "x";', /初始值.*預期 number，得到 string/],
+  ['let n: number = 1; n = false;', /指派給.*預期 number，得到 boolean/],
+  ['fn f(n: number): number { return n; } f("x");', /第 1 個引數.*預期 number，得到 string/],
+  ['fn f(n: number): number { return n; } f();', /預期 1 個引數/],
+  ['fn f(): number { return "x"; }', /回傳值.*預期 number，得到 string/],
+  ['fn f(flag: boolean): number { if (flag) return 1; }', /可能沒有回傳值.*得到 null/],
+  ['fn f(): number { while (true) { break; } }', /可能沒有回傳值/],
+  ['let f: fn(number) -> number = fn(x: string): number { return len(x); };', /初始值.*fn/],
+  ['let f: fn(fn(number) -> number) -> number = fn(g: fn(string) -> number): number { return g("x"); };', /初始值.*fn/],
+  ['let flag: number = 1; if (flag) print(1);', /if 條件.*boolean/],
+  ['let flag: string = "x"; while (flag) {}', /while 條件.*boolean/],
+  ['let n: number = 2; print(n + "x");', /兩個數字或兩個字串/],
+  ['let n: number = 2; print(n and true);', /預期 boolean/],
+  ['let n: number = 2; n();', /無法呼叫 number/],
+  ['let n: Missing = 1;', /未知的型別 'Missing'/],
+  ['let n: any = 1; print = fn() {};', /無法指派內建函式/],
+  ['let flag: number = 1; print(喵選(flag, "a", "b"));', /第 1 個引數.*boolean/],
 ];
 for (const [source, message] of staticErrors) test(`static diagnostic: ${source}`, () => sameError(source, 'type', message));
 
@@ -84,31 +85,31 @@ test('return analysis handles both branches, infinite loops and unreachable brea
 });
 
 const boundaries = [
-  ['let dynamic = "x"; let n: number = dynamic;', /expected number, got string/],
-  ['let n: number = 1; let dynamic = "x"; n = dynamic;', /expected number, got string/],
-  ['fn f(n: number): number { return n; } let dynamic = "x"; f(dynamic);', /expected number, got string/],
-  ['fn f(): number { let dynamic = "x"; return dynamic; } f();', /expected number, got string/],
-  ['let dynamic = fn(n) { return "x"; }; let f: fn(number) -> number = dynamic; f(1);', /expected number, got string/],
-  ['let dynamic = fn(n) { return n; }; let f: fn(number) -> number = dynamic; let arg = "x"; f(arg);', /expected number, got string/],
-  ['let dynamic = fn() { return 1; }; let f: fn(number) -> number = dynamic;', /function with 0 parameter/],
-  ['let f: fn(number) -> number = fn(n: number): number { return n; }; let dynamic = fn(n) { return "x"; }; (f = dynamic)(1);', /expected number, got string/],
-  ['fn use(f: fn(number) -> number): number { return f(1); } let dynamic = fn(n) { return "x"; }; use(dynamic);', /expected number, got string/],
-  ['fn make(): fn(number) -> number { let dynamic = fn(n) { return "x"; }; return dynamic; } make()(1);', /expected number, got string/],
-  ['let marker: number = 1; fn f() { return 1; } let dynamic = 5; f = dynamic;', /expected fn\(\) -> any, got number/],
+  ['let dynamic = "x"; let n: number = dynamic;', /預期 number，得到 string/],
+  ['let n: number = 1; let dynamic = "x"; n = dynamic;', /預期 number，得到 string/],
+  ['fn f(n: number): number { return n; } let dynamic = "x"; f(dynamic);', /預期 number，得到 string/],
+  ['fn f(): number { let dynamic = "x"; return dynamic; } f();', /預期 number，得到 string/],
+  ['let dynamic = fn(n) { return "x"; }; let f: fn(number) -> number = dynamic; f(1);', /預期 number，得到 string/],
+  ['let dynamic = fn(n) { return n; }; let f: fn(number) -> number = dynamic; let arg = "x"; f(arg);', /預期 number，得到 string/],
+  ['let dynamic = fn() { return 1; }; let f: fn(number) -> number = dynamic;', /有 0 個參數的函式/],
+  ['let f: fn(number) -> number = fn(n: number): number { return n; }; let dynamic = fn(n) { return "x"; }; (f = dynamic)(1);', /預期 number，得到 string/],
+  ['fn use(f: fn(number) -> number): number { return f(1); } let dynamic = fn(n) { return "x"; }; use(dynamic);', /預期 number，得到 string/],
+  ['fn make(): fn(number) -> number { let dynamic = fn(n) { return "x"; }; return dynamic; } make()(1);', /預期 number，得到 string/],
+  ['let marker: number = 1; fn f() { return 1; } let dynamic = 5; f = dynamic;', /預期 fn\(\) -> any，得到 number/],
 ];
 for (const [source, message] of boundaries) test(`runtime gradual boundary: ${source}`, () => sameError(source, 'runtime', message));
 
 test('runtime contracts remain enabled when static checking is explicitly skipped', () => {
-  sameError('let n: number = "x";', 'runtime', /type contract/, { typecheck: false });
-  sameError('fn f(): number {} f();', 'runtime', /expected number, got null/, { typecheck: false });
-  sameError('fn f(n: number): number { return n; } f("x");', 'runtime', /expected number, got string/, { typecheck: false });
+  sameError('let n: number = "x";', 'runtime', /型別契約/, { typecheck: false });
+  sameError('fn f(): number {} f();', 'runtime', /預期 number，得到 null/, { typecheck: false });
+  sameError('fn f(n: number): number { return n; } f("x");', 'runtime', /預期 number，得到 string/, { typecheck: false });
 });
 test('untyped named functions remain dynamic until static checking is requested', () => {
   both('fn f() {} f = 5; print(f);', ['5']);
-  sameError('fn f() {} let dynamic = 5; f = dynamic;', 'runtime', /type contract/, { typecheck: true });
+  sameError('fn f() {} let dynamic = 5; f = dynamic;', 'runtime', /型別契約/, { typecheck: true });
 });
 test('repeated mixed function contracts are bounded rather than growing without limit', () => {
-  sameError('let f: any = fn(x) { return x; }; let i: number = 0; while (i < 100) { let strict: fn(number) -> number = f; let loose: fn(any) -> any = strict; f = loose; i = i + 1; }', 'limit', /contract depth/);
+  sameError('let f: any = fn(x) { return x; }; let i: number = 0; while (i < 100) { let strict: fn(number) -> number = f; let loose: fn(any) -> any = strict; f = loose; i = i + 1; }', 'limit', /契約巢狀深度/);
 });
 test('type nesting is bounded and unknown prototype-like type names are rejected', () => {
   assert.throws(() => check('let x: ' + 'fn() -> '.repeat(250) + 'number = null;'), error => error instanceof LangError && error.phase === 'limit');

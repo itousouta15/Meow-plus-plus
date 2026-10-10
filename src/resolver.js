@@ -9,7 +9,7 @@ export function resolve(program) {
   const scopes = [new Map(builtinNames.map((name, slot) => [name, slot]))];
   let functionDepth = 0, loopDepth = 0, nesting = 0;
   const add = (scope, name, span) => {
-    if (scope.has(name)) fail(`duplicate binding '${name}' in this scope`, span, 'resolve');
+    if (scope.has(name)) fail(`在此作用域重複宣告 '${name}'`, span, 'resolve');
     const slot = scope.size;
     scope.set(name, slot);
     return slot;
@@ -18,7 +18,7 @@ export function resolve(program) {
     for (let i = scopes.length - 1; i >= 0; i--) {
       if (scopes[i].has(name)) return { depth: scopes.length - 1 - i, slot: scopes[i].get(name), name };
     }
-    fail(`undefined variable '${name}'`, span, 'resolve');
+    fail(`未定義的變數 '${name}'`, span, 'resolve');
   };
   const block = (node, params = []) => {
     const scope = new Map();
@@ -45,7 +45,7 @@ export function resolve(program) {
     finally { scopes.pop(); }
   };
   const visit = node => {
-    if (++nesting > 160) fail('syntax tree is too deep', node.span, 'limit');
+    if (++nesting > 160) fail('語法樹過深', node.span, 'limit');
     try {
       switch (node.type) {
         case 'Program': case 'Block': block(node); break;
@@ -72,11 +72,11 @@ export function resolve(program) {
           try { visit(node.body); } finally { loopDepth--; }
           break;
         case 'Return':
-          if (functionDepth === 0) fail('return is only allowed inside a function', node.span, 'resolve');
+          if (functionDepth === 0) fail('回傳(return) 只能出現在函式內', node.span, 'resolve');
           if (node.value) visit(node.value);
           break;
         case 'Break': case 'Continue':
-          if (loopDepth === 0) fail(`${node.type.toLowerCase()} is only allowed inside a loop`, node.span, 'resolve');
+          if (loopDepth === 0) fail(`${node.type === 'Break' ? '中斷(break)' : '繼續(continue)'} 只能出現在迴圈內`, node.span, 'resolve');
           break;
         default: throw new Error(`unknown AST node ${node.type}`);
       }

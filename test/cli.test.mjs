@@ -29,7 +29,7 @@ test('CLI preserves output before errors and reports source location', () => {
   assert.deepEqual(value.output, ['before']);
   assert.equal(value.error.phase, 'runtime');
   const text = invoke(['-'], 'print(1 / 0);');
-  assert.match(text.stderr, /:1:9: runtime: division by zero/);
+  assert.match(text.stderr, /:1:9: runtime: 除以零/);
 });
 test('CLI rejects bad arguments and enforces fuel', () => {
   assert.equal(invoke(['--engine', 'bad', '-']).status, 64);

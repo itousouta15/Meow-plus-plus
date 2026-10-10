@@ -65,7 +65,7 @@ export class VM {
           const call = prepareCall(this.pop(), arguments_, span);
           const { callee, args } = call;
           if (callee.kind === 'builtin') { this.stack.push(finishCall(call, callee.call(args, span), span)); break; }
-          if (this.frames.length - 1 >= this.context.maxDepth) fail('call depth limit exceeded', span, 'limit');
+          if (this.frames.length - 1 >= this.context.maxDepth) fail('呼叫深度超過上限', span, 'limit');
           const local = new Environment(callee.proto.layout, callee.environment, callee.proto.types);
           for (let i = 0; i < args.length; i++) local.initialize(i, args[i], span);
           this.frames.push({ proto: callee.proto, ip: 0, env: local, base: this.stack.length, callSpan: span, call, id: this.nextFrameId++ });

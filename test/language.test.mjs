@@ -33,40 +33,51 @@ const cases = [
 ];
 for (const [name, source, expected] of cases) test(name, () => both(source, expected));
 
+test('喵 family built-ins run deterministically in both engines', () => {
+  both('喵("a", 1); 喵喵("b", 2); print(喵叫(), 喵重複("喵", 3), 喵黏("x", 1, "y"));', ['a 1', '喵～ b 2', '喵～ 喵喵喵 x1y']);
+  both('print(喵長("你好🙂"), 喵型(null), 喵字(42), 喵數("-1.5e2"), 喵根(9));', ['3 null 42 -150 3']);
+  both('print(喵選(true, "甲", "乙"), 喵選(false, "甲", "乙"));', ['甲 乙']);
+  both('let p = 喵; let q = print; print(p == q, 喵長("ab") == len("ab"));', ['false true']);
+});
+
 const errors = [
-  ['print(1 / 0);', 'runtime', 'division by zero'],
-  ['print(1 % 0);', 'runtime', 'remainder by zero'],
-  ['print(1e308 * 1e308);', 'runtime', 'not finite'],
-  ['if (1) print(2);', 'runtime', 'expected boolean'],
-  ['print(true and 1);', 'runtime', 'expected boolean'],
-  ['print(1 or true);', 'runtime', 'expected boolean'],
-  ['print("a" + 2);', 'runtime', 'expected number'],
-  ['print(-true);', 'runtime', 'expected number'],
-  ['let x = x;', 'runtime', 'before initialization'],
-  ['x = 1; let x = 2;', 'runtime', 'before initialization'],
-  ['let x = 1; { print(x); let x = 2; }', 'runtime', 'before initialization'],
-  ['print = 1;', 'runtime', 'cannot assign built-in'],
-  ['len(1);', 'runtime', 'len expects string'],
-  ['number(" 1");', 'runtime', 'decimal numeric string'],
-  ['sqrt(-1);', 'runtime', 'not finite'],
-  ['assert(false);', 'runtime', 'assertion failed'],
-  ['let x = 1; x();', 'runtime', 'cannot call number'],
-  ['fn f(x) { return x; } f();', 'runtime', 'expects 1 argument'],
-  ['let x = 1; let x = 2;', 'resolve', 'duplicate binding'],
-  ['fn f(x, x) {}', 'resolve', 'duplicate binding'],
-  ['fn f(x) { let x = 1; }', 'resolve', 'duplicate binding'],
-  ['print(missing);', 'resolve', 'undefined variable'],
-  ['return 1;', 'resolve', 'only allowed inside a function'],
-  ['break;', 'resolve', 'only allowed inside a loop'],
-  ['while (true) { fn f() { continue; } break; }', 'resolve', 'only allowed inside a loop'],
-  ['let x = 1', 'parse', "expected ';'"],
-  ['(1 + 2) = 4;', 'parse', 'assignment target'],
-  ['let x;', 'parse', 'require an initializer'],
-  ['print("unterminated);', 'lex', 'unterminated string'],
-  ['print("\\q");', 'lex', 'invalid string escape'],
-  ['/* unfinished', 'lex', 'unterminated block comment'],
-  ['print(1e999);', 'lex', 'must be finite'],
-  ['print(1e+);', 'lex', 'expected digits in exponent'],
+  ['print(1 / 0);', 'runtime', '除以零'],
+  ['print(1 % 0);', 'runtime', '對零取餘數'],
+  ['print(1e308 * 1e308);', 'runtime', '不是有限的'],
+  ['if (1) print(2);', 'runtime', '預期 boolean'],
+  ['print(true and 1);', 'runtime', '預期 boolean'],
+  ['print(1 or true);', 'runtime', '預期 boolean'],
+  ['print("a" + 2);', 'runtime', '預期 number'],
+  ['print(-true);', 'runtime', '預期 number'],
+  ['let x = x;', 'runtime', '初始化前'],
+  ['x = 1; let x = 2;', 'runtime', '初始化前'],
+  ['let x = 1; { print(x); let x = 2; }', 'runtime', '初始化前'],
+  ['print = 1;', 'runtime', '無法指派內建函式'],
+  ['len(1);', 'runtime', 'len 預期字串'],
+  ['number(" 1");', 'runtime', '十進位數字字串'],
+  ['sqrt(-1);', 'runtime', '不是有限的'],
+  ['assert(false);', 'runtime', '斷言失敗'],
+  ['let x = 1; x();', 'runtime', '無法呼叫 number'],
+  ['fn f(x) { return x; } f();', 'runtime', '預期 1 個引數'],
+  ['let x = 1; let x = 2;', 'resolve', '重複宣告'],
+  ['fn f(x, x) {}', 'resolve', '重複宣告'],
+  ['fn f(x) { let x = 1; }', 'resolve', '重複宣告'],
+  ['print(missing);', 'resolve', '未定義的變數'],
+  ['return 1;', 'resolve', '只能出現在函式內'],
+  ['break;', 'resolve', '只能出現在迴圈內'],
+  ['while (true) { fn f() { continue; } break; }', 'resolve', '只能出現在迴圈內'],
+  ['let x = 1', 'parse', "預期 ';'"],
+  ['(1 + 2) = 4;', 'parse', '賦值目標'],
+  ['let x;', 'parse', '需要初始值'],
+  ['print("unterminated);', 'lex', '字串沒有結束'],
+  ['print("\\q");', 'lex', '無效的字串跳脫序列'],
+  ['/* unfinished', 'lex', '區塊註解沒有結束'],
+  ['print(1e999);', 'lex', '必須是有限的'],
+  ['print(1e+);', 'lex', '指數部分缺少數字'],
+  ['喵重複("x", -1);', 'runtime', '非負整數'],
+  ['喵重複("喵", 100000);', 'limit', '字串超過'],
+  ['喵選(1, "a", "b");', 'runtime', '預期 boolean'],
+  ['喵叫(1);', 'runtime', '喵叫 預期 0 個引數'],
 ];
 for (const [source, phase, message] of errors) {
   test(`matching diagnostic: ${source}`, () => {
@@ -104,10 +115,10 @@ test('source spans and stack traces identify the failed operation', () => {
 test('execution, recursion, string and output limits terminate programs', () => {
   for (const engine of ['tree', 'vm']) {
     for (const [source, options, message] of [
-      ['while (true) {}', { maxSteps: 100 }, 'steps'],
-      ['fn recurse() { recurse(); } recurse();', { maxDepth: 12 }, 'call depth'],
-      ['let s = "x"; while (true) { s = s + s; }', {}, 'string exceeds'],
-      ['while (true) { print("xxxxxxxx"); }', { maxOutput: 30 }, 'output limit'],
+      ['while (true) {}', { maxSteps: 100 }, '步'],
+      ['fn recurse() { recurse(); } recurse();', { maxDepth: 12 }, '呼叫深度'],
+      ['let s = "x"; while (true) { s = s + s; }', {}, '字串超過'],
+      ['while (true) { print("xxxxxxxx"); }', { maxOutput: 30 }, '輸出超過上限'],
     ]) {
       assert.throws(() => run(source, { engine, ...options }), error => error instanceof LangError && error.phase === 'limit' && error.message.includes(message));
     }

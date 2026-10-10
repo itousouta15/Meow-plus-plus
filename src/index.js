@@ -27,5 +27,5 @@ export function run(source, options = {}) {
   const engine = options.engine ?? 'vm';
   if (engine === 'tree') return new Interpreter(ast, options).run();
   if (engine === 'vm') return new VM(compileAst(ast), options).run();
-  throw new TypeError("engine must be 'tree' or 'vm'");
+  throw new TypeError("引擎必須是 'tree' 或 'vm'");
 }

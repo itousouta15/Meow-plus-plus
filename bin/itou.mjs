@@ -3,14 +3,14 @@ import { readFileSync } from 'node:fs';
 import { run, check as checkTypes, compile, disassemble, LangError, formatDiagnostic } from '../src/index.js';
 
 const usage = `itouLang 0.2.0
-Usage: node bin/itou.mjs [options] <file.itou | ->
-  --engine vm|tree     Execution engine (default: vm)
-  --check              Resolve and statically type-check without executing
-  --no-typecheck       Skip static checking (runtime contracts still apply)
-  --disassemble        Print bytecode with source locations
-  --json               Structured result or diagnostic
-  --max-steps N        Execution fuel (default: 1000000)
-  --help               Show this help
+用法：node bin/itou.mjs [選項] <檔案.itou | ->
+  --engine vm|tree     執行引擎（預設：vm）
+  --check              只做名稱解析與靜態型別檢查，不執行
+  --no-typecheck       略過靜態檢查（執行期契約仍會生效）
+  --disassemble        輸出帶原始碼位置的 bytecode
+  --json               以 JSON 輸出結果或診斷
+  --max-steps N        執行步數上限（預設：1000000）
+  --help               顯示本說明
 `;
 
 function main(args) {
@@ -23,23 +23,23 @@ function main(args) {
       const arg = args[i];
       if (arg === '--engine') {
         engine = args[++i];
-        if (!['vm', 'tree'].includes(engine)) throw new Error('--engine must be vm or tree');
+        if (!['vm', 'tree'].includes(engine)) throw new Error('--engine 必須是 vm 或 tree');
       } else if (arg === '--max-steps') {
         const text = args[++i] ?? '';
         maxSteps = Number(text);
         if (!/^\d+$/.test(text) || !Number.isSafeInteger(maxSteps) || maxSteps < 1)
-          throw new Error('--max-steps must be a positive safe integer');
+          throw new Error('--max-steps 必須是正的安全整數');
       } else if (arg === '--check') check = true;
       else if (arg === '--no-typecheck') typecheck = false;
       else if (arg === '--disassemble') assembly = true;
       else if (arg === '--json') json = true;
-      else if (arg.startsWith('-') && arg !== '-') throw new Error(`unknown option ${arg}`);
-      else if (filename !== undefined) throw new Error('expected exactly one input file');
+      else if (arg.startsWith('-') && arg !== '-') throw new Error(`未知的選項 ${arg}`);
+      else if (filename !== undefined) throw new Error('只接受一個輸入檔案');
       else filename = arg;
     }
-    if (filename === undefined) throw new Error('missing input file');
-    if (check && assembly) throw new Error('--check and --disassemble cannot be combined');
-    if (check && typecheck === false) throw new Error('--check and --no-typecheck cannot be combined');
+    if (filename === undefined) throw new Error('缺少輸入檔案');
+    if (check && assembly) throw new Error('--check 與 --disassemble 不能併用');
+    if (check && typecheck === false) throw new Error('--check 與 --no-typecheck 不能併用');
   } catch (error) { process.stderr.write(`${error.message}\n${usage}`); return 64; }
 
   let source;

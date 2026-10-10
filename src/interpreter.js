@@ -74,7 +74,7 @@ export class Interpreter {
         const call = prepareCall(target, arguments_, node.span);
         const { callee, args } = call;
         if (callee.kind === 'builtin') return finishCall(call, callee.call(args, node.span), node.span);
-        if (this.calls.length >= this.context.maxDepth) fail('call depth limit exceeded', node.span, 'limit');
+        if (this.calls.length >= this.context.maxDepth) fail('呼叫深度超過上限', node.span, 'limit');
         this.calls.push({ name: callee.name, span: node.span });
         try {
           const local = new Environment(callee.node.body.layout, callee.environment, callee.node.body.types);

@@ -36,9 +36,35 @@ statements. Blocks and named function declarations do not need one. An empty
 statement is allowed. `if` / `while` bodies are statements; put declarations
 inside a block. `else` binds to the nearest unmatched `if`.
 
-Identifiers are ASCII `[A-Za-z_][A-Za-z0-9_]*`, case-sensitive. Numbers are
-decimal with optional fractional part and decimal exponent; `.5`, `1.`, hex,
-NaN and infinity literals are not supported. Unary minus is an operator.
+Identifiers are ASCII `[A-Za-z_][A-Za-z0-9_]*` or Han (`[A-Za-z_\p{Script=Han}][\p{Script=Han}A-Za-z0-9_]*`),
+case-sensitive. Numbers are decimal with optional fractional part and decimal
+exponent; `.5`, `1.`, hex, NaN and infinity literals are not supported. Unary
+minus is an operator.
+
+### 中文關鍵字
+
+Every keyword has a Chinese alias; English and Chinese may be mixed freely.
+
+| English | 中文 | English | 中文 |
+| --- | --- | --- | --- |
+| `let` | `令`、`設` | `return` | `回傳`、`返回` |
+| `fn` | `函式`、`函` | `break` | `中斷`、`跳出` |
+| `if` | `如果`、`若` | `continue` | `繼續` |
+| `else` | `否則` | `true` | `真` |
+| `while` | `當` | `false` | `假` |
+| `and` | `且`、`並且` | `null` | `空` |
+| `or` | `或`、`或者` | | |
+
+型別名稱也接受中文：`數`／`數字`（number）、`字串`（string）、`布林`／`布林值`
+（boolean）、`空`（null）、`任意`／`任意值`（any）、`函式`（fn）。例如：
+
+```text
+函式 費式(第幾項: 數字): 數字 {
+  若 (第幾項 < 2) { 回傳 第幾項; }
+  回傳 費式(第幾項 - 1) + 費式(第幾項 - 2);
+}
+喵("費波那契：", 費式(10));
+```
 
 Strings use double quotes and JSON escapes (`\n`, `\t`, `\uXXXX`, etc.). Raw
 newlines/control characters are rejected. Comments are `//` through end-of-line
@@ -118,14 +144,27 @@ its condition. Return/break/continue discard exited local scopes.
 | Function | Contract |
 | --- | --- |
 | `print(...values)` | Display values separated by one space; emit one output line; return null |
+| `喵(...values)` | `print` 的別名，輸出完全相同 |
+| `喵喵(...values)` | 和 `print` 相同，但每行輸出加上「喵～ 」前綴 |
 | `len(string)` | Count Unicode code-point iterations, not UTF-16 units or grapheme clusters |
+| `喵長(string)` | `len` 的別名 |
 | `str(value)` | Display representation: numbers/booleans/null/text, or `<fn name>` |
+| `喵字(value)` | `str` 的別名 |
 | `number(string)` | Parse a complete decimal numeric string; no whitespace, hex or implicit coercion |
+| `喵數(string)` | `number` 的別名 |
 | `type(value)` | `number`, `string`, `boolean`, `null`, or `function` |
+| `喵型(value)` | `type` 的別名 |
 | `sqrt(number)` | Finite square root; negative input is an error |
+| `喵根(number)` | `sqrt` 的別名 |
 | `assert(boolean)` | Return null for true; error for false |
+| `喵驗(boolean)` | `assert` 的別名 |
+| `喵黏(...values)` | 把每個值的顯示字串直接串接（不加分隔），回傳字串 |
+| `喵重複(string, number)` | 將字串重複非負整數次；結果上限 65536 個碼元 |
+| `喵選(boolean, any, any)` | 條件為真回傳第二個值，否則回傳第三個（三元運算） |
+| `喵叫()` | 回傳字串 `喵～` |
 
-All except print have exactly one argument. User functions have exact arity.
+`喵` 家族全為確定性內建，兩個引擎共用同一份實作。`print`、`喵`、`喵喵`、
+`喵黏` 接受可變數量的引數；其餘為固定引數數量。使用者函式的引數數量必須完全相符。
 The syntax allows at most 64 parameters and 64 arguments per call. Print's
 representation is intended for humans; use the host API's JSON result for
 structured output.

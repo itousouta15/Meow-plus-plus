@@ -14,12 +14,12 @@ class Parser {
     this.at++;
     return true;
   }
-  expect(kind, message = `expected '${kind}'`) {
+  expect(kind, message = `預期 '${kind}'`) {
     if (this.match(kind)) return this.previous();
     fail(message, this.peek().span, 'parse');
   }
   guard(fn) {
-    if (++this.depth > 180) fail('syntax nesting is too deep', this.peek().span, 'limit');
+    if (++this.depth > 180) fail('語法巢狀層級過深', this.peek().span, 'limit');
     try { return fn(); } finally { this.depth--; }
   }
   program() {
@@ -31,9 +31,9 @@ class Parser {
   declaration() {
     if (this.match('let')) {
       const first = this.previous();
-      const name = this.expect('identifier', 'expected a variable name');
+      const name = this.expect('identifier', '預期變數名稱');
       const annotation = this.match(':') ? this.typeAnnotation() : null;
-      this.expect('=', "variables require an initializer: let name = value;");
+      this.expect('=', '變數需要初始值：令 名稱 = 值;');
       const init = this.expression();
       const last = this.expect(';');
       return { type: 'Let', name: name.value, nameSpan: name.span, annotation, init, span: spanBetween(first, last) };
@@ -82,7 +82,7 @@ class Parser {
   block(first) {
     const body = [];
     while (!this.check('}') && !this.check('eof')) body.push(this.declaration());
-    const last = this.expect('}', "expected '}' to close block");
+    const last = this.expect('}', "預期 '}' 以結束區塊");
     return { type: 'Block', body, span: spanBetween(first, last) };
   }
   functionBody(first, name = '<anonymous>') {
@@ -91,15 +91,15 @@ class Parser {
       const params = [];
       if (!this.check(')')) {
         do {
-          const param = this.expect('identifier', 'expected parameter name');
+          const param = this.expect('identifier', '預期參數名稱');
           const annotation = this.match(':') ? this.typeAnnotation() : null;
           params.push({ name: param.value, span: param.span, annotation });
-          if (params.length > 64) fail('at most 64 parameters are allowed', param.span, 'parse');
+          if (params.length > 64) fail('最多只允許 64 個參數', param.span, 'parse');
         } while (this.match(','));
       }
       this.expect(')');
       const returnType = this.match(':') ? this.typeAnnotation() : null;
-      const body = this.block(this.expect('{', "expected '{' before function body"));
+      const body = this.block(this.expect('{', "函式主體前預期 '{'"));
       return { type: 'Function', name, params, returnType, body, span: spanBetween(first, body) };
     });
   }
@@ -111,15 +111,15 @@ class Parser {
         if (!this.check(')')) {
           do {
             params.push(this.typeAnnotation());
-            if (params.length > 64) fail('at most 64 function type parameters are allowed', this.peek().span, 'parse');
+            if (params.length > 64) fail('函式型別最多只允許 64 個參數', this.peek().span, 'parse');
           } while (this.match(','));
         }
-        this.expect(')'); this.expect('->', "expected '->' before function result type");
+        this.expect(')'); this.expect('->', "函式回傳型別前預期 '->'");
         return functionType(params, this.typeAnnotation());
       }
       const token = this.peek();
-      if (!this.match('identifier', 'null')) fail('expected a type annotation', token.span, 'parse');
-      if (!Object.hasOwn(primitiveTypes, token.value)) fail(`unknown type '${token.value}'`, token.span, 'type');
+      if (!this.match('identifier', 'null')) fail('預期型別註記', token.span, 'parse');
+      if (!Object.hasOwn(primitiveTypes, token.value)) fail(`未知的型別 '${token.value}'`, token.span, 'type');
       return primitiveTypes[token.value];
     });
   }
@@ -129,7 +129,7 @@ class Parser {
     if (this.match('=')) {
       const op = this.previous();
       const value = this.expression();
-      if (left.type !== 'Variable') fail('assignment target must be a variable', op.span, 'parse');
+      if (left.type !== 'Variable') fail('賦值目標必須是變數', op.span, 'parse');
       return { type: 'Assign', name: left.name, value, span: spanBetween(left, value), nameSpan: left.span };
     }
     return left;
@@ -165,7 +165,7 @@ class Parser {
       if (!this.check(')')) {
         do {
           args.push(this.expression());
-          if (args.length > 64) fail('at most 64 arguments are allowed', this.peek().span, 'parse');
+          if (args.length > 64) fail('最多只允許 64 個引數', this.peek().span, 'parse');
         } while (this.match(','));
       }
       const last = this.expect(')');
@@ -184,7 +184,7 @@ class Parser {
     if (this.match('(')) {
       const node = this.expression(); this.expect(')'); return node;
     }
-    fail('expected an expression', this.peek().span, 'parse');
+    fail('預期一個運算式', this.peek().span, 'parse');
   }
 }
 
