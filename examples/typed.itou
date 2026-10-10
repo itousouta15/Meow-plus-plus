@@ -1,0 +1,21 @@
+// Optional annotations, higher-order function types and checked closures.
+fn counter(start: number): fn(number) -> number {
+  let value: number = start;
+  return fn(step: number): number {
+    value = value + step;
+    return value;
+  };
+}
+
+fn twice(f: fn(number) -> number, value: number): number {
+  return f(f(value));
+}
+
+let count: fn(number) -> number = counter(10);
+print(count(1));
+print(count(5));
+print(twice(fn(n: number): number { return n * 2; }, 3));
+
+// Change this initializer to a string to see a compile-time diagnostic.
+let answer: number = 42;
+print("answer:", answer);

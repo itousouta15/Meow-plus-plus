@@ -1,0 +1,14 @@
+fn counter(start) {
+  let value = start;
+  return fn(step) {
+    value = value + step;
+    return value;
+  };
+}
+
+let first = counter(10);
+let second = counter(100);
+print(first(1));
+print(first(5));
+print(second(2));
+print(first(1));

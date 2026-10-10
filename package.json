@@ -1,0 +1,21 @@
+{
+  "name": "itoulang",
+  "version": "0.2.0",
+  "private": true,
+  "description": "A small language with a tree-walk interpreter, bytecode VM and browser debugger",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "itou": "./bin/itou.mjs" },
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:browser": "playwright test",
+    "check": "node tools/check.mjs",
+    "bench": "node tools/benchmark.mjs",
+    "bench:types": "node tools/type-benchmark.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0"
+  },
+  "license": "MIT"
+}

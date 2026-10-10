@@ -1,0 +1,6 @@
+// Unicode strings, strict types, and deterministic built-ins.
+let greeting = "你好，itouLang！";
+print(greeting);
+print("字元數：", len(greeting));
+print("6 × 7 =", 6 * 7);
+assert(type(greeting) == "string");

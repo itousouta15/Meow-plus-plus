@@ -1,0 +1,9 @@
+fn ratio(a, b) {
+  return a / b;
+}
+
+fn report() {
+  print(ratio(10, 0));
+}
+
+report();
