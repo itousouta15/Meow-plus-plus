@@ -162,12 +162,30 @@ its condition. Return/break/continue discard exited local scopes.
 | `喵重複(string, number)` | 將字串重複非負整數次；結果上限 65536 個碼元 |
 | `喵選(boolean, any, any)` | 條件為真回傳第二個值，否則回傳第三個（三元運算） |
 | `喵叫()` | 回傳字串 `喵～` |
+| `讀行()` | 讀入下一行（去除結尾 `\n`／`\r\n`），檔尾回傳 null |
+| `讀()`／`喵吃()` | 讀入下一個以空白分隔的 token，檔尾回傳 null |
+| `讀數()` | 讀入下一個 token 並解析為數字；非數字為錯誤，檔尾回傳 null |
 
 `喵` 家族全為確定性內建，兩個引擎共用同一份實作。`print`、`喵`、`喵喵`、
 `喵黏` 接受可變數量的引數；其餘為固定引數數量。使用者函式的引數數量必須完全相符。
 The syntax allows at most 64 parameters and 64 arguments per call. Print's
 representation is intended for humans; use the host API's JSON result for
 structured output.
+
+## 輸入（標準輸入）
+
+`讀行`／`讀`／`喵吃`／`讀數` 從 host 提供的輸入字串讀取，共用同一個游標（可混用：
+`讀行` 前進一行，`讀` 略過空白取到下一個 token）。檔尾一律回傳 `null`，方便用
+`while` 或 `if` 判斷。host 未提供輸入時，預設為空字串。
+
+- 嵌入 API：`run(source, { input: "..." })` 或 `new VM(bytecode, { input })`。
+- CLI：檔案模式會自動讀取管線／重導向的標準輸入；`-`（程式來自 stdin）時不做輸入。
+
+```text
+// echo.itou：讀一行，回聲。
+令 台詞 = 讀行();
+若 (台詞 == 空) { 喵("喵？沒有輸入。"); } 否則 { 喵("喵～", 台詞); }
+```
 
 ## Bounded execution
 

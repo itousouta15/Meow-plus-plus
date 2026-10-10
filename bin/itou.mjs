@@ -42,15 +42,19 @@ function main(args) {
     if (check && typecheck === false) throw new Error('--check 與 --no-typecheck 不能併用');
   } catch (error) { process.stderr.write(`${error.message}\n${usage}`); return 64; }
 
-  let source;
+  let source, input = '';
   const output = [];
   try {
-    source = readFileSync(filename === '-' ? 0 : filename, 'utf8');
+    if (filename === '-') source = readFileSync(0, 'utf8');
+    else {
+      source = readFileSync(filename, 'utf8');
+      if (!process.stdin.isTTY) { try { input = readFileSync(0, 'utf8'); } catch { input = ''; } }
+    }
     let result;
     if (check) result = checkTypes(source);
     else if (assembly) result = { bytecode: disassemble(compile(source, { typecheck })) };
     else result = run(source, {
-      engine, maxSteps, typecheck,
+      engine, maxSteps, typecheck, input,
       onOutput: text => { output.push(text); if (!json) process.stdout.write(`${text}\n`); },
     });
     if (json) process.stdout.write(`${JSON.stringify(result)}\n`);

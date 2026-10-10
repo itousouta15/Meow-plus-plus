@@ -11,6 +11,7 @@ export const builtinNames = [
   'sqrt', '喵根',
   'assert', '喵驗',
   '喵黏', '喵重複', '喵選', '喵叫',
+  '讀行', '讀', '喵吃', '讀數',
 ];
 
 export function typeOf(value) {
@@ -135,6 +136,8 @@ export class Context {
     this.output = [];
     this.outputSize = 0;
     this.onOutput = options.onOutput ?? (() => {});
+    this.input = typeof options.input === 'string' ? options.input : '';
+    this.readOffset = 0;
   }
   tick(span) {
     if (++this.steps > this.maxSteps) fail(`執行超過 ${this.maxSteps} 步`, span, 'limit');
@@ -166,6 +169,35 @@ export function builtins(context) {
     if (!boolean(value, span)) fail('斷言失敗', span);
     return null;
   } };
+  const readLine = () => {
+    const input = context.input;
+    if (context.readOffset >= input.length) return null;
+    let end = input.indexOf('\n', context.readOffset);
+    if (end === -1) end = input.length;
+    let line = input.slice(context.readOffset, end);
+    if (line.endsWith('\r')) line = line.slice(0, -1);
+    context.readOffset = end + 1;
+    return line;
+  };
+  const readToken = () => {
+    const input = context.input;
+    let i = context.readOffset;
+    while (i < input.length && /\s/.test(input[i])) i++;
+    if (i >= input.length) { context.readOffset = input.length; return null; }
+    const start = i;
+    while (i < input.length && !/\s/.test(input[i])) i++;
+    context.readOffset = i;
+    return input.slice(start, i);
+  };
+  const readNumber = span => {
+    const token = readToken();
+    if (token === null) return null;
+    if (!/^-?(?:\d+(?:\.\d+)?)(?:[eE][+-]?\d+)?$/.test(token)) fail(`讀數 預期數字，得到 '${token}'`, span);
+    return finite(Number(token), span);
+  };
+  const 讀行 = { arity: 0, call: () => readLine() };
+  const 讀 = { arity: 0, call: () => readToken() };
+  const 讀數 = { arity: 0, call: (_args, span) => readNumber(span) };
   const functions = {
     print, 喵: print,
     喵喵: { arity: null, call: (args, span) => { context.emit(`喵～ ${args.map(display).join(' ')}`, span); return null; } },
@@ -184,6 +216,7 @@ export function builtins(context) {
     } },
     喵選: { arity: 3, call: ([condition, whenTrue, whenFalse], span) => boolean(condition, span) ? whenTrue : whenFalse },
     喵叫: { arity: 0, call: () => '喵～' },
+    讀行, 讀, 喵吃: 讀, 讀數,
   };
   for (let i = 0; i < builtinNames.length; i++) {
     const name = builtinNames[i];

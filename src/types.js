@@ -74,4 +74,8 @@ export const builtinTypes = Object.freeze({
   喵重複: functionType([STRING, NUMBER], STRING),
   喵選: functionType([BOOLEAN, ANY, ANY], ANY),
   喵叫: functionType([], STRING),
+  讀行: functionType([], ANY),
+  讀: functionType([], ANY),
+  喵吃: functionType([], ANY),
+  讀數: functionType([], ANY),
 });

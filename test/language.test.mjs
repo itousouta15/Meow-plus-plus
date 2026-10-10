@@ -40,6 +40,23 @@ test('喵 family built-ins run deterministically in both engines', () => {
   both('let p = 喵; let q = print; print(p == q, 喵長("ab") == len("ab"));', ['false true']);
 });
 
+test('input built-ins read host-provided stdin deterministically', () => {
+  const source = 'let line = 讀行(); print(line); let a = 讀數(); let b = 讀數(); print(a + b); print(讀()); print(讀() == null); print(喵吃());';
+  const input = 'hello\n3 4 尾巴\n';
+  for (const engine of ['tree', 'vm'])
+    assert.deepEqual(run(source, { engine, input }).output, ['hello', '7', '尾巴', 'true', 'null']);
+});
+
+test('input built-ins handle EOF, CRLF and invalid numbers', () => {
+  for (const engine of ['tree', 'vm']) {
+    assert.deepEqual(run('print(讀行(), 讀行());', { engine }).output, ['null null']);
+    assert.deepEqual(run('print(讀行());', { engine, input: 'a\r\nb' }).output, ['a']);
+    assert.deepEqual(run('print(讀(), 讀());', { engine, input: '甲\n乙' }).output, ['甲 乙']);
+    assert.throws(() => run('print(讀數());', { engine, input: 'abc' }),
+      error => error instanceof LangError && error.phase === 'runtime' && error.message.includes('預期數字'));
+  }
+});
+
 const errors = [
   ['print(1 / 0);', 'runtime', '除以零'],
   ['print(1 % 0);', 'runtime', '對零取餘數'],
