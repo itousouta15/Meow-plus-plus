@@ -1,5 +1,6 @@
 {
   "name": "itoulang",
+  "displayName": "喵++",
   "version": "0.3.0",
   "private": true,
   "description": "A C++-style language with a C++17 core, bytecode VM and WebAssembly debugger",

@@ -1,0 +1,12 @@
+// Only upgrade the unchanged former hello example; arbitrary user source is data.
+const previousHello = `// 中文型別、識別字與喵內建。
+字串 問候 = "你好，itouLang！";
+喵out << 問候 << 喵endl;
+喵out << "字元數： " << 喵長(問候) << 喵endl;
+喵out << "6 × 7 = " << 6 * 7 << 喵endl;
+喵驗(喵型(問候) == "string");`;
+
+export function upgradeHelloBrand(source) {
+  return source.replace(/\r\n/g, '\n').trim() === previousHello
+    ? source.replace('你好，itouLang！', '你好，喵++！') : source;
+}

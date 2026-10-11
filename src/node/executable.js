@@ -8,5 +8,5 @@ export function executable() {
     const path = fileURLToPath(new URL(`../../${name}`, import.meta.url));
     if (existsSync(path)) return path;
   }
-  throw new Error('找不到 itouLang C++ 核心。請先執行 npm run build，或設定 ITOU_BINARY。');
+  throw new Error('找不到喵++ C++ 核心。請先執行 npm run build，或設定 ITOU_BINARY。');
 }

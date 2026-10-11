@@ -11,7 +11,7 @@ test('playground serves only public modules and examples, with correct HTTP sema
   const base = `http://127.0.0.1:${server.address().port}`;
   const html = await fetch(base);
   assert.equal(html.status, 200);
-  assert.match(await html.text(), /itouLang — 語言實驗室/);
+  assert.match(await html.text(), /喵\+\+ — 語言實驗室/);
   const module = await fetch(`${base}/src/index.js`);
   assert.match(module.headers.get('content-type'), /javascript/);
   assert.match(await module.text(), /export function run/);

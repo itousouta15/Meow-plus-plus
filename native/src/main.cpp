@@ -12,7 +12,7 @@
 #endif
 
 namespace {
-const char* usage = "itouLang 0.3.0 (C++ core)\n用法：itou [選項] <檔案.itou | ->\n"
+const char* usage = "喵++ 0.3.0 (C++ core)\n用法：itou [選項] <檔案.itou | ->\n"
   "  --engine vm|tree     執行引擎（預設：vm）\n"
   "  --check              只做名稱解析與靜態型別檢查\n"
   "  --no-typecheck       略過靜態檢查（執行期契約仍會生效）\n"

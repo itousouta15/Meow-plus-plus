@@ -1,3 +1,5 @@
+import { upgradeHelloBrand } from '../src/branding.js';
+
 const $ = id => document.getElementById(id);
 const editor = $('source');
 const breakpoints = new Set();
@@ -273,7 +275,8 @@ $('download').addEventListener('click', () => {
 const saved = readPreference('itoulang.source');
 $('input').value = readPreference('itoulang.input') ?? '';
 if (saved !== null) {
-  editor.value = saved; filename = 'custom.itou'; $('filename').textContent = filename; $('example').value = 'custom';
+  editor.value = upgradeHelloBrand(saved); filename = 'custom.itou'; $('filename').textContent = filename; $('example').value = 'custom';
+  if (editor.value !== saved) savePreference('itoulang.source', editor.value);
   lineCount = editor.value.split('\n').length;
   $('save-state').textContent = '已恢復上次內容'; status('已恢復上次編輯的程式。'); cursor(); drawGutter();
 } else await loadExample('hello');

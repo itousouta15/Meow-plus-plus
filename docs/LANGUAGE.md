@@ -1,4 +1,4 @@
-# itouLang 0.3 language specification
+# 喵++ 0.3 language specification
 
 ## 中文語法與 C++ 風格結構
 
@@ -26,7 +26,7 @@
 - `迴圈`／`對於` 是 `for`，`當` 是 `while`；`迴圈` 中的 `繼續` 會先執行更新部分。
 - `且`／`或` 等價於 `&&`／`||`，採短路求值；`真`／`假`／`空` 是對應的常值。
 
-數值與動態型別規則仍依 itouLang 規格，詳見 [TYPES.md](TYPES.md)。以下英文規格也適用於等價的中文寫法。
+數值與動態型別規則仍依喵++ 規格，詳見 [TYPES.md](TYPES.md)。以下英文規格也適用於等價的中文寫法。
 
 ## C++-style syntax
 
@@ -248,7 +248,7 @@ the while condition or the for update. Return/break/continue discard exited loca
 不提供 C++ 的 failbit 狀態或互動式終端讀取。
 
 型別前置的基本變數可寫成 `整數 數值;`、`字串 文字;`、`布林 條件;`、`空 值;`，
-分別在宣告執行時初始化為 `0`、`""`、`假`、`空`。這是 itouLang 的預設初始化，
+分別在宣告執行時初始化為 `0`、`""`、`假`、`空`。這是喵++ 的預設初始化，
 不是 C++ 的未初始化值；`自動`／函式型別與舊式 `令` 宣告仍需給初始值。
 
 ### 一般內建函式

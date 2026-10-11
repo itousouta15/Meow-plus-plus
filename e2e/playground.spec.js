@@ -15,7 +15,7 @@ test('real workers execute both engines and layout fits the viewport', async ({ 
     await page.locator('#engine').selectOption(engine);
     await page.locator('#run').click();
     await expect(page.locator('#result-badge')).toHaveText('成功');
-    await expect(page.locator('#stdout')).toContainText('你好，itouLang！');
+    await expect(page.locator('#stdout')).toContainText('你好，喵++！');
     await expect(page.locator('#stdout')).toContainText('6 × 7 = 42');
     await expect(page.locator('#diagnostic')).toBeHidden();
   }

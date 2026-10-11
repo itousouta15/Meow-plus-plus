@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <title>itouLang — 語言實驗室</title>
-  <meta name="description" content="從原始碼到 bytecode：在瀏覽器執行、比較並逐步除錯 itouLang。">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%239ee8c5'/%3E%3Ctext x='12' y='45' font-family='monospace' font-size='40' fill='%23101b18'%3Ei%3E%3C/text%3E%3C/svg%3E">
+  <title>喵++ — 語言實驗室</title>
+  <meta name="description" content="從原始碼到位元組碼：在瀏覽器執行、比較並逐步除錯喵++。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%239ee8c5'/%3E%3Ctext x='5' y='43' font-family='sans-serif' font-size='35' fill='%23101b18'%3E%E5%96%B5%3C/text%3E%3Ctext x='41' y='53' font-family='monospace' font-size='16' fill='%23101b18'%3E++%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="/web/style.css">
   <script type="module" src="/web/app.js"></script>
 </head>
 <body>
   <header class="masthead">
-    <a class="brand" href="/" aria-label="itouLang 首頁"><span class="brand-icon">i&gt;</span><span>itou<span class="brand-light">Lang</span></span><span class="version">0.3</span></a>
+    <a class="brand" href="/" aria-label="喵++ 首頁"><span class="brand-icon">喵</span><span>喵<span class="brand-light">++</span></span><span class="version">0.3</span></a>
     <div class="header-right"><span class="local-badge"><i></i> 完全在瀏覽器執行</span><button id="theme" class="icon-button" aria-label="切換明暗主題" title="切換明暗主題">◐</button></div>
   </header>
 
@@ -35,7 +35,7 @@
       <div class="panes">
         <section class="editor-panel" aria-label="原始碼編輯器">
           <div class="panel-heading"><span><i class="file-dot"></i> <span id="filename">hello.itou</span></span><span id="save-state">本機工作區</span></div>
-          <div class="editor-body"><div id="gutter" class="gutter" aria-label="行號與中斷點"><div id="gutter-inner"></div></div><label class="sr-only" for="source">itouLang 原始碼</label><textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="editor-hint"></textarea></div>
+          <div class="editor-body"><div id="gutter" class="gutter" aria-label="行號與中斷點"><div id="gutter-inner"></div></div><label class="sr-only" for="source">喵++ 原始碼</label><textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="editor-hint"></textarea></div>
           <div class="editor-footer"><span id="cursor">第 1 行，第 1 欄</span><span id="editor-hint">點行號設定中斷點 · Ctrl Enter 執行</span><button id="download" class="text-button">下載 .itou ↓</button></div>
           <div class="stdin-panel"><label for="input">標準輸入 <span>供 喵in／喵getline 讀取</span></label><textarea id="input" rows="2" spellcheck="false" placeholder="輸入測資，例如：3 4"></textarea></div>
         </section>
@@ -58,6 +58,6 @@
 
     <section class="notes" aria-label="語言特色"><div><span class="note-index">01</span><h2>兩條執行路徑</h2><p>語法樹直譯器與堆疊虛擬機，共用語法規格，分別執行控制流程。</p></div><div><span class="note-index">02</span><h2>真正的詞法閉包</h2><p>函式保留定義時的作用域。嘗試計數器範例，觀察捕獲的變數。</p></div><div><span class="note-index">03</span><h2>從錯誤找到位置</h2><p>型別、作用域與執行錯誤，都附上原始碼位置與函式呼叫堆疊。</p></div></section>
   </main>
-  <footer class="page-footer"><span>itouLang / 語言實驗室</span><span>C++17 核心 · WebAssembly · 堆疊虛擬機</span></footer>
+  <footer class="page-footer"><span>喵++ / 語言實驗室</span><span>C++17 核心 · WebAssembly · 堆疊虛擬機</span></footer>
 </body>
 </html>
