@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const cli = fileURLToPath(new URL('../bin/itou.mjs', import.meta.url));
 function invoke(args, input = '') {
@@ -50,4 +53,35 @@ test('CLI static override preserves runtime type contracts', () => {
   assert.equal(result.status, 1);
   assert.equal(JSON.parse(result.stdout).error.phase, 'runtime');
   assert.equal(invoke(['--check', '--no-typecheck', '-']).status, 64);
+});
+test('native CLI accepts Unicode file paths and redirected program input', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'itou-cli-'));
+  try {
+    const file = join(directory, '中文 範例.itou');
+    writeFileSync(file, 'int main() { print(讀行()); return 0; }');
+    const result = invoke([file], '你好\r\n');
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, '你好\n');
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('CLI stream I/O preserves exact whitespace and separates stdout from stderr', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'itou-streams-'));
+  try {
+    const file = join(directory, '串流.itou');
+    writeFileSync(file, '整數 數值; 喵in >> 數值; 喵out << "值：" << 數值; 喵err << "提醒" << 喵endl;');
+    for (const engine of ['vm', 'tree']) {
+      const result = invoke(['--engine', engine, file], '42');
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(result.stdout, '值：42');
+      assert.equal(result.stderr, '提醒\n');
+      const json = JSON.parse(invoke(['--engine', engine, '--json', file], '42').stdout);
+      assert.equal(json.stdout, '值：42');
+      assert.equal(json.stderr, '提醒\n');
+    }
+    const failure = invoke(['-'], '喵out << "前"; 喵err << "提醒\\n"; 喵(1 / 0);');
+    assert.equal(failure.status, 1);
+    assert.equal(failure.stdout, '前');
+    assert.match(failure.stderr, /^提醒\n.*runtime: 除以零/);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
 });

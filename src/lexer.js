@@ -1,18 +1,19 @@
 import { fail } from './diagnostics.js';
 
-const keywords = new Set(['let', 'fn', 'if', 'else', 'while', 'return', 'break', 'continue', 'true', 'false', 'null', 'and', 'or']);
+const keywords = new Set(['let', 'fn', 'if', 'else', 'while', 'for', 'return', 'break', 'continue', 'true', 'false', 'null', 'and', 'or']);
 const aliases = new Map([
   ['令', 'let'], ['設', 'let'],
   ['函式', 'fn'], ['函', 'fn'],
   ['如果', 'if'], ['若', 'if'], ['否則', 'else'],
   ['當', 'while'],
+  ['迴圈', 'for'], ['對於', 'for'],
   ['回傳', 'return'], ['返回', 'return'],
   ['中斷', 'break'], ['跳出', 'break'], ['繼續', 'continue'],
   ['真', 'true'], ['假', 'false'], ['空', 'null'],
   ['且', 'and'], ['並且', 'and'], ['或', 'or'], ['或者', 'or'],
 ]);
-const single = new Set('(){};,:+-*/%!=<>');
-const double = new Set(['==', '!=', '<=', '>=', '->']);
+const single = new Set('(){}[]&;,:+-*/%!=<>');
+const double = new Set(['==', '!=', '<=', '>=', '->', '&&', '||', '++', '--', '+=', '-=', '*=', '/=', '%=', '<<', '>>']);
 const digit = c => c !== undefined && c >= '0' && c <= '9';
 const identifierStart = /[A-Za-z_\p{Script=Han}]/u;
 const alpha = c => c !== undefined && identifierStart.test(c);
@@ -97,7 +98,7 @@ export function tokenize(source) {
       continue;
     }
     const pair = source.slice(offset, offset + 2);
-    if (double.has(pair)) { advance(); advance(); push(pair, pair, span); continue; }
+    if (double.has(pair)) { advance(); advance(); push(pair === '&&' ? 'and' : pair === '||' ? 'or' : pair, pair, span); continue; }
     if (single.has(char)) { advance(); push(char, char, span); continue; }
     advance();
     fail(`未預期的字元 ${JSON.stringify(char)}`, { ...span, end: offset }, 'lex');

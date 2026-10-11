@@ -11,3 +11,7 @@ main{max-width:1480px;margin:auto;padding:0 44px}.intro{display:flex;justify-con
 .toolbar-group.actions{flex-wrap:wrap}
 @media(max-width:480px){.toolbar-group.actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}.toolbar-group.actions .button{grid-column:span 2}.toolbar-group.actions .button.primary{grid-column:span 4}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.stdin-panel{border-top:1px solid var(--border);flex-shrink:0;padding:10px 14px;background:var(--panel)}
+.stdin-panel label{display:block;font-size:11px;color:var(--text);margin-bottom:5px}.stdin-panel label span{font-size:10px;color:var(--muted);margin-left:8px}
+.stdin-panel textarea{height:58px;padding:7px 9px;border:1px solid var(--border);border-radius:6px;line-height:20px;background:var(--editor);font-size:12px;white-space:pre-wrap}
+.stdin-panel textarea:focus-visible{outline:1px solid var(--accent)}.stderr-panel{margin-top:18px}.stderr-panel>span{font-size:10px;color:var(--muted)}.stderr-panel .diagnostic{margin-top:7px}

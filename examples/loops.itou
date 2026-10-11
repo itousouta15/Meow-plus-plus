@@ -1,11 +1,9 @@
-let i = 0;
-let total = 0;
-while (i < 20) {
-  i = i + 1;
-  if (i % 2 == 0) { continue; }
-  if (i > 9) { break; }
-  total = total + i;
-  print("adding", i, "→", total);
+整數 總和 = 0;
+迴圈 (整數 索引 = 1; 索引 <= 20; ++索引) {
+  如果 (索引 % 2 == 0) { 繼續; }
+  如果 (索引 > 9) { 中斷; }
+  總和 += 索引;
+  喵out << "加上 " << 索引 << " → " << 總和 << 喵endl;
 }
-assert(total == 25);
-print("sum of odd numbers below ten:", total);
+喵驗(總和 == 25);
+喵out << "小於十的奇數總和： " << 總和 << 喵endl;

@@ -5,6 +5,8 @@ export const BOOLEAN = Object.freeze({ kind: 'boolean' });
 export const NULL = Object.freeze({ kind: 'null' });
 export const primitiveTypes = Object.freeze({
   any: ANY, number: NUMBER, string: STRING, boolean: BOOLEAN, null: NULL,
+  auto: ANY, int: NUMBER, double: NUMBER, float: NUMBER, bool: BOOLEAN, void: NULL,
+  自動: ANY, 整數: NUMBER, 浮點數: NUMBER, 小數: NUMBER, 無值: NULL,
   任意: ANY, 任意值: ANY,
   數: NUMBER, 數字: NUMBER,
   字串: STRING,

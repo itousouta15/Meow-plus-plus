@@ -1,6 +1,6 @@
-// Unicode strings, strict types, and deterministic built-ins.
-let greeting = "你好，itouLang！";
-print(greeting);
-print("字元數：", len(greeting));
-print("6 × 7 =", 6 * 7);
-assert(type(greeting) == "string");
+// 中文型別、識別字與喵內建。
+字串 問候 = "你好，itouLang！";
+喵out << 問候 << 喵endl;
+喵out << "字元數： " << 喵長(問候) << 喵endl;
+喵out << "6 × 7 = " << 6 * 7 << 喵endl;
+喵驗(喵型(問候) == "string");

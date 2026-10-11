@@ -61,14 +61,17 @@ export function resolve(program) {
         }
         case 'Variable': node.address = address(node.name, node.span); break;
         case 'Assign': node.address = address(node.name, node.nameSpan); visit(node.value); break;
+        case 'Update': node.address = address(node.name, node.nameSpan); break;
         case 'Literal': case 'Empty': break;
         case 'ExpressionStmt': visit(node.expression); break;
+        case 'StreamOut': for (const value of node.values) visit(value); break;
+        case 'StreamIn': for (const target of node.targets) visit(target); break;
         case 'Binary': case 'Logical': visit(node.left); visit(node.right); break;
         case 'Unary': visit(node.value); break;
         case 'Call': visit(node.callee); for (const arg of node.args) visit(arg); break;
         case 'If': visit(node.test); visit(node.then); if (node.otherwise) visit(node.otherwise); break;
-        case 'While':
-          visit(node.test); loopDepth++;
+        case 'While': case 'For':
+          visit(node.test); if (node.update) visit(node.update); loopDepth++;
           try { visit(node.body); } finally { loopDepth--; }
           break;
         case 'Return':

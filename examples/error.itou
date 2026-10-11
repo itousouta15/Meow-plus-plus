@@ -1,9 +1,9 @@
-fn ratio(a, b) {
-  return a / b;
+浮點數 比值(浮點數 分子, 浮點數 分母) {
+  回傳 分子 / 分母;
 }
 
-fn report() {
-  print(ratio(10, 0));
+無值 報告() {
+  喵out << 比值(10, 0) << 喵endl;
 }
 
-report();
+報告();

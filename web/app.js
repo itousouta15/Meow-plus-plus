@@ -12,7 +12,10 @@ function status(text, state = '') {
   $('status').textContent = text;
   $('status').dataset.state = state;
 }
-function badge(text, state = '') { $('result-badge').textContent = text; $('result-badge').dataset.state = state; }
+const badgeLabels = { READY: '就緒', RUNNING: '執行中', COMPILING: '編譯中', SUCCESS: '成功', 'TYPES OK': '型別通過', COMPILED: '編譯完成', PAUSED: '已暫停', FINISHED: '已結束', ERROR: '錯誤', STOPPED: '已停止' };
+const typeLabels = { any: '任意', number: '數字', string: '字串', boolean: '布林', null: '空', fn: '函式', function: '函式', pending: '尚未初始化' };
+function localizedType(text) { return text.replace(/\b(any|number|string|boolean|null|fn|function|pending)\b/g, word => typeLabels[word]); }
+function badge(text, state = '') { $('result-badge').textContent = badgeLabels[text] ?? text; $('result-badge').dataset.state = state; }
 function selectTab(name) {
   for (const tab of document.querySelectorAll('[data-tab]')) {
     const selected = tab.dataset.tab === name;
@@ -52,11 +55,14 @@ function drawGutter() {
 function cursor() {
   const before = editor.value.slice(0, editor.selectionStart);
   const lines = before.split('\n');
-  $('cursor').textContent = `Ln ${lines.length}, Col ${lines.at(-1).length + 1}`;
+  $('cursor').textContent = `第 ${lines.length} 行，第 ${lines.at(-1).length + 1} 欄`;
 }
-function renderOutput(lines, error = null) {
-  $('stdout').textContent = lines.length ? lines.join('\n') : '（沒有輸出）';
-  $('stdout').dataset.empty = String(lines.length === 0);
+function renderOutput(lines, error = null, stdout = null, stderr = '') {
+  const text = stdout ?? lines.join('\n');
+  $('stdout').textContent = text || '（沒有輸出）';
+  $('stdout').dataset.empty = String(text.length === 0);
+  $('stderr-panel').hidden = !stderr;
+  $('stderr').textContent = stderr;
   $('diagnostic').hidden = !error;
   $('diagnostic').textContent = error ?? '';
 }
@@ -64,31 +70,31 @@ function renderDebug(state) {
   activeLine = state.done ? null : state.location.line;
   drawGutter();
   const instruction = state.instruction;
-  $('debug-position').textContent = state.done ? `執行結束 · ${state.steps.toLocaleString()} instructions` : `Line ${state.location.line}:${state.location.column}  ·  #${instruction.functionId} / ${String(instruction.index).padStart(4, '0')} ${instruction.op}`;
+  $('debug-position').textContent = state.done ? `執行結束 · ${state.steps.toLocaleString()} 條指令` : `第 ${state.location.line} 行，第 ${state.location.column} 欄  ·  #${instruction.functionId} / ${String(instruction.index).padStart(4, '0')} ${instruction.op}`;
   const frames = state.frames.map(frame => {
     const row = document.createElement('div'); row.className = 'frame-row';
-    const name = document.createElement('span'); name.textContent = frame.name;
-    const position = document.createElement('span'); position.textContent = `L${frame.line} / ip ${frame.ip}`;
+    const name = document.createElement('span'); name.textContent = frame.name === '<script>' ? '<全域>' : frame.name === '<anonymous>' ? '<匿名函式>' : frame.name;
+    const position = document.createElement('span'); position.textContent = `第 ${frame.line} 行 / 指令 ${frame.ip}`;
     row.append(name, position); return row;
   });
   $('frames').replaceChildren(...frames);
   const fragment = document.createDocumentFragment();
   state.scopes.forEach((scope, index) => {
     const heading = document.createElement('div'); heading.className = 'scope-label';
-    heading.textContent = `SCOPE ${index}${index === 0 ? ' · current' : ''}`;
+    heading.textContent = `作用域 ${index}${index === 0 ? ' · 目前位置' : ''}`;
     fragment.append(heading);
     if (scope.length === 0) { const empty = document.createElement('div'); empty.className = 'muted'; empty.textContent = '（沒有區域變數）'; fragment.append(empty); }
     for (const variable of scope) {
       const row = document.createElement('div'); row.className = 'variable-row';
-      for (const text of [variable.name, variable.value, variable.type]) { const cell = document.createElement('span'); cell.textContent = text; row.append(cell); }
-      row.title = `Declared type: ${variable.declaredType}`;
+      for (const text of [variable.name, variable.value, localizedType(variable.type)]) { const cell = document.createElement('span'); cell.textContent = text; row.append(cell); }
+      row.title = `宣告型別：${localizedType(variable.declaredType)}`;
       fragment.append(row);
     }
   });
   $('variables').replaceChildren(fragment);
   $('operand-stack').textContent = state.stack.length ? state.stack.map((value, index) => `${index}: ${value}`).join('\n') : '[]';
-  renderOutput(state.output);
-  $('metrics').textContent = `${state.steps.toLocaleString()} VM instructions`;
+  renderOutput(state.output, null, state.stdout, state.stderr);
+  $('metrics').textContent = `${state.steps.toLocaleString()} 條虛擬機指令`;
   if (activeLine !== null) {
     const top = (activeLine - 1) * 24;
     if (top < editor.scrollTop || top > editor.scrollTop + editor.clientHeight - 48) editor.scrollTop = Math.max(0, top - 48);
@@ -114,14 +120,14 @@ function createWorker() {
     if (message.assembly) $('bytecode').textContent = message.assembly;
     if (message.type === 'result') {
       debugging = false;
-      renderOutput(message.result.output);
+      renderOutput(message.result.output, null, message.result.stdout, message.result.stderr);
       const elapsed = (performance.now() - started).toFixed(1);
-      $('metrics').textContent = `${elapsed} ms · ${message.result.steps.toLocaleString()} ${message.result.engine === 'vm' ? 'instructions' : 'AST steps'}`;
-      badge('SUCCESS', 'success'); status(`執行完成 · ${message.result.engine === 'vm' ? 'Bytecode VM' : 'Tree interpreter'}`);
+      $('metrics').textContent = `${elapsed} 毫秒 · ${message.result.steps.toLocaleString()} ${message.result.engine === 'vm' ? '條指令' : '步語法樹操作'}`;
+      badge('SUCCESS', 'success'); status(`執行完成 · ${message.result.engine === 'vm' ? '位元組碼虛擬機' : '語法樹直譯器'}`);
     } else if (message.type === 'checked') {
       debugging = false;
-      renderOutput(message.report.globals.map(variable => `${variable.name}: ${variable.type}`));
-      $('metrics').textContent = `${message.report.globals.length} bindings · ${message.report.functions.length} functions`;
+      renderOutput(message.report.globals.map(variable => `${variable.name}：${localizedType(variable.type)}`));
+      $('metrics').textContent = `${message.report.globals.length} 個宣告 · ${message.report.functions.length} 個函式`;
       badge('TYPES OK', 'success'); status('靜態型別檢查通過。');
     } else if (message.type === 'compiled') {
       debugging = false;
@@ -134,8 +140,8 @@ function createWorker() {
     } else if (message.type === 'error') {
       debugging = false;
       if (message.state) renderDebug(message.state);
-      renderOutput(message.output, message.formatted);
-      $('metrics').textContent = message.error.phase.toUpperCase();
+      renderOutput(message.output, message.formatted, message.stdout, message.stderr);
+      $('metrics').textContent = ({ lex: '詞法分析', parse: '語法分析', resolve: '名稱解析', type: '型別檢查', runtime: '執行期', limit: '資源上限', internal: '核心錯誤' })[message.error.phase] ?? message.error.phase;
       badge('ERROR', 'error'); status(message.error.message, 'error'); selectTab('output');
       if (message.error.span) {
         activeLine = message.error.span.line;
@@ -158,11 +164,11 @@ function start(type) {
   createWorker();
   busy = true; controls(); started = performance.now();
   $('diagnostic').hidden = true;
-  $('output-kind').textContent = type === 'check' ? 'TYPE REPORT' : 'STDOUT';
+  $('output-kind').textContent = type === 'check' ? '型別報告' : '標準輸出';
   badge(type === 'run' ? 'RUNNING' : 'COMPILING');
   status(type === 'run' ? '正在執行…' : '正在編譯…');
   selectTab(type === 'compile' ? 'bytecode' : type === 'debug' ? 'debugger' : 'output');
-  worker.postMessage({ id: request, type, source: editor.value, filename, engine: $('engine').value });
+  worker.postMessage({ id: request, type, source: editor.value, filename, engine: $('engine').value, input: $('input').value });
 }
 function debugCommand(type) {
   if (!debugging || busy) return;
@@ -188,6 +194,7 @@ async function loadExample(name) {
     const source = await response.text();
     if (version !== loadVersion) return;
     editor.value = source;
+    if (name === 'streams' && !$('input').value) { $('input').value = '3 4\n'; savePreference('itoulang.input', $('input').value); }
     editor.scrollTop = 0; editor.setSelectionRange(0, 0);
     filename = `${name}.itou`; $('filename').textContent = filename;
     lineCount = editor.value.split('\n').length; breakpoints.clear();
@@ -210,6 +217,11 @@ $('stop').addEventListener('click', () => { resetWorker(); badge('STOPPED'); sta
 for (const type of ['step-line', 'step-instruction', 'continue']) $(type).addEventListener('click', () => debugCommand(type));
 $('example').addEventListener('change', event => loadExample(event.target.value));
 editor.addEventListener('input', changed);
+$('input').addEventListener('input', () => {
+  if (busy || debugging) resetWorker();
+  savePreference('itoulang.input', $('input').value);
+  badge('READY'); status('標準輸入已更新。');
+});
 editor.addEventListener('scroll', drawGutter);
 editor.addEventListener('click', cursor);
 editor.addEventListener('keyup', cursor);
@@ -259,6 +271,7 @@ $('download').addEventListener('click', () => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 const saved = readPreference('itoulang.source');
+$('input').value = readPreference('itoulang.input') ?? '';
 if (saved !== null) {
   editor.value = saved; filename = 'custom.itou'; $('filename').textContent = filename; $('example').value = 'custom';
   lineCount = editor.value.split('\n').length;

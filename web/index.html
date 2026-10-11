@@ -12,51 +12,52 @@
 </head>
 <body>
   <header class="masthead">
-    <a class="brand" href="/" aria-label="itouLang 首頁"><span class="brand-icon">i&gt;</span><span>itou<span class="brand-light">Lang</span></span><span class="version">0.2</span></a>
+    <a class="brand" href="/" aria-label="itouLang 首頁"><span class="brand-icon">i&gt;</span><span>itou<span class="brand-light">Lang</span></span><span class="version">0.3</span></a>
     <div class="header-right"><span class="local-badge"><i></i> 完全在瀏覽器執行</span><button id="theme" class="icon-button" aria-label="切換明暗主題" title="切換明暗主題">◐</button></div>
   </header>
 
   <main>
     <section class="intro">
-      <div><div class="eyebrow">A SMALL LANGUAGE. A REAL RUNTIME.</div><h1>讓每一步，都看得見<span>。</span></h1><p>寫一段程式，走過語法樹、bytecode 與執行堆疊。</p></div>
-      <div class="pipeline" aria-label="編譯流程"><span>Source</span><b>→</b><span>AST</span><b>→</b><span>Bytecode</span><b>→</b><span class="pipeline-active">VM</span></div>
+      <div><div class="eyebrow">中文語法 · C++ 核心 · WebAssembly</div><h1>讓每一步，都看得見<span>。</span></h1><p>用中文寫出 C++ 風格的程式，觀察位元組碼與執行堆疊。</p></div>
+      <div class="pipeline" aria-label="編譯流程"><span>原始碼</span><b>→</b><span>語法樹</span><b>→</b><span>位元組碼</span><b>→</b><span class="pipeline-active">虛擬機</span></div>
     </section>
 
     <section class="workspace" aria-label="語言開發工作區">
       <div class="toolbar">
         <div class="toolbar-group">
-          <label class="select-wrap" for="example"><span class="sr-only">範例程式</span><select id="example"><option value="hello">hello.itou</option><option value="meow">meow.itou</option><option value="echo">echo.itou</option><option value="closures">closures.itou</option><option value="typed">typed.itou</option><option value="fibonacci">fibonacci.itou</option><option value="loops">loops.itou</option><option value="error">error.itou</option><option value="custom" disabled>custom.itou</option></select></label>
+          <label class="select-wrap" for="example"><span class="sr-only">範例程式</span><select id="example"><option value="hello">hello.itou</option><option value="cpp">cpp.itou</option><option value="streams">streams.itou</option><option value="meow">meow.itou</option><option value="echo">echo.itou</option><option value="closures">closures.itou</option><option value="typed">typed.itou</option><option value="fibonacci">fibonacci.itou</option><option value="loops">loops.itou</option><option value="error">error.itou</option><option value="custom" disabled>custom.itou</option></select></label>
           <span class="toolbar-divider"></span>
-          <label class="engine-wrap" for="engine">ENGINE <select id="engine"><option value="vm">Bytecode VM</option><option value="tree">Tree interpreter</option></select></label>
+          <label class="engine-wrap" for="engine">引擎 <select id="engine"><option value="vm">位元組碼虛擬機</option><option value="tree">語法樹直譯器</option></select></label>
         </div>
-        <div class="toolbar-group actions"><button id="check" class="button quiet">檢查型別</button><button id="compile" class="button quiet" title="查看編譯結果">Bytecode</button><button id="debug" class="button secondary">開始除錯</button><button id="run" class="button primary" title="Ctrl / ⌘ + Enter"><span>▶</span> 執行</button><button id="stop" class="button danger" disabled>■ 停止</button></div>
+        <div class="toolbar-group actions"><button id="check" class="button quiet">檢查型別</button><button id="compile" class="button quiet" title="查看編譯結果">位元組碼</button><button id="debug" class="button secondary">開始除錯</button><button id="run" class="button primary" title="Ctrl / ⌘ + Enter"><span>▶</span> 執行</button><button id="stop" class="button danger" disabled>■ 停止</button></div>
       </div>
 
       <div class="panes">
         <section class="editor-panel" aria-label="原始碼編輯器">
-          <div class="panel-heading"><span><i class="file-dot"></i> <span id="filename">hello.itou</span></span><span id="save-state">LOCAL WORKSPACE</span></div>
+          <div class="panel-heading"><span><i class="file-dot"></i> <span id="filename">hello.itou</span></span><span id="save-state">本機工作區</span></div>
           <div class="editor-body"><div id="gutter" class="gutter" aria-label="行號與中斷點"><div id="gutter-inner"></div></div><label class="sr-only" for="source">itouLang 原始碼</label><textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="editor-hint"></textarea></div>
-          <div class="editor-footer"><span id="cursor">Ln 1, Col 1</span><span id="editor-hint">點行號設定中斷點 · Ctrl Enter 執行</span><button id="download" class="text-button">下載 .itou ↓</button></div>
+          <div class="editor-footer"><span id="cursor">第 1 行，第 1 欄</span><span id="editor-hint">點行號設定中斷點 · Ctrl Enter 執行</span><button id="download" class="text-button">下載 .itou ↓</button></div>
+          <div class="stdin-panel"><label for="input">標準輸入 <span>供 喵in／喵getline 讀取</span></label><textarea id="input" rows="2" spellcheck="false" placeholder="輸入測資，例如：3 4"></textarea></div>
         </section>
 
         <section class="result-panel" aria-label="執行結果與除錯器">
-          <div class="tab-bar" role="tablist" aria-label="結果檢視"><button id="tab-output" role="tab" aria-selected="true" aria-controls="panel-output" data-tab="output">執行結果</button><button id="tab-bytecode" role="tab" aria-selected="false" aria-controls="panel-bytecode" tabindex="-1" data-tab="bytecode">Bytecode</button><button id="tab-debugger" role="tab" aria-selected="false" aria-controls="panel-debugger" tabindex="-1" data-tab="debugger">除錯器</button><span id="result-badge" class="result-badge">READY</span></div>
-          <section id="panel-output" class="tab-panel" role="tabpanel" aria-labelledby="tab-output"><div class="output-header"><span id="output-kind">STDOUT</span><span id="metrics">等待執行</span></div><pre id="stdout" class="stdout" data-empty="true">執行程式後，輸出會出現在這裡。</pre><pre id="diagnostic" class="diagnostic" hidden></pre><div class="output-bottom"><span class="terminal-prompt">&gt;_</span><span>獨立 Worker 執行 · 有限步數 · 可隨時停止</span></div></section>
-          <section id="panel-bytecode" class="tab-panel" role="tabpanel" aria-labelledby="tab-bytecode" hidden><div class="output-header"><span>DISASSEMBLY</span><span>指令位置 / 原始碼行號 / 操作碼</span></div><pre id="bytecode" class="bytecode">按「Bytecode」查看編譯結果。</pre></section>
+          <div class="tab-bar" role="tablist" aria-label="結果檢視"><button id="tab-output" role="tab" aria-selected="true" aria-controls="panel-output" data-tab="output">執行結果</button><button id="tab-bytecode" role="tab" aria-selected="false" aria-controls="panel-bytecode" tabindex="-1" data-tab="bytecode">位元組碼</button><button id="tab-debugger" role="tab" aria-selected="false" aria-controls="panel-debugger" tabindex="-1" data-tab="debugger">除錯器</button><span id="result-badge" class="result-badge">就緒</span></div>
+          <section id="panel-output" class="tab-panel" role="tabpanel" aria-labelledby="tab-output"><div class="output-header"><span id="output-kind">標準輸出</span><span id="metrics">等待執行</span></div><pre id="stdout" class="stdout" data-empty="true">執行程式後，輸出會出現在這裡。</pre><div id="stderr-panel" class="stderr-panel" hidden><span>標準錯誤輸出（喵err／喵log）</span><pre id="stderr" class="diagnostic" aria-label="標準錯誤輸出"></pre></div><pre id="diagnostic" class="diagnostic" hidden></pre><div class="output-bottom"><span class="terminal-prompt">&gt;_</span><span>獨立 Worker 執行 · 有限步數 · 可隨時停止</span></div></section>
+          <section id="panel-bytecode" class="tab-panel" role="tabpanel" aria-labelledby="tab-bytecode" hidden><div class="output-header"><span>反組譯結果</span><span>指令位置 / 原始碼行號 / 操作碼</span></div><pre id="bytecode" class="bytecode">按「位元組碼」查看編譯結果。</pre></section>
           <section id="panel-debugger" class="tab-panel" role="tabpanel" aria-labelledby="tab-debugger" hidden>
             <div class="debug-toolbar"><button id="step-line" class="button secondary" disabled title="F10">下一行 ↷</button><button id="step-instruction" class="button quiet" disabled>單步指令</button><button id="continue" class="button secondary" disabled title="F8">繼續 ▶</button></div>
-            <div id="debug-position" class="debug-position">按「開始除錯」進入 Bytecode VM。</div>
-            <div class="debug-section"><h2>CALL STACK</h2><div id="frames" class="frames"><p class="muted">尚未開始</p></div></div>
-            <div class="debug-section"><h2>LEXICAL SCOPES</h2><div id="variables"><p class="muted">單步執行時檢查變數與閉包。</p></div></div>
-            <div class="debug-section"><h2>OPERAND STACK</h2><pre id="operand-stack" class="operand-stack">[]</pre></div>
+            <div id="debug-position" class="debug-position">按「開始除錯」進入位元組碼虛擬機。</div>
+            <div class="debug-section"><h2>呼叫堆疊</h2><div id="frames" class="frames"><p class="muted">尚未開始</p></div></div>
+            <div class="debug-section"><h2>詞法作用域</h2><div id="variables"><p class="muted">單步執行時檢查變數與閉包。</p></div></div>
+            <div class="debug-section"><h2>運算元堆疊</h2><pre id="operand-stack" class="operand-stack">[]</pre></div>
           </section>
         </section>
       </div>
       <div class="statusbar"><span id="status" role="status" aria-live="polite">正在載入工作區…</span><span id="breakpoint-count">0 個中斷點</span></div>
     </section>
 
-    <section class="notes" aria-label="語言特色"><div><span class="note-index">01</span><h2>兩條執行路徑</h2><p>Tree-walk 直譯器與 stack VM，共用語法規格，分別執行控制流程。</p></div><div><span class="note-index">02</span><h2>真正的詞法閉包</h2><p>函式保留定義時的作用域。嘗試 counter 範例，觀察捕獲的變數。</p></div><div><span class="note-index">03</span><h2>從錯誤找到位置</h2><p>型別、作用域與執行錯誤，都附上原始碼位置與函式呼叫堆疊。</p></div></section>
+    <section class="notes" aria-label="語言特色"><div><span class="note-index">01</span><h2>兩條執行路徑</h2><p>語法樹直譯器與堆疊虛擬機，共用語法規格，分別執行控制流程。</p></div><div><span class="note-index">02</span><h2>真正的詞法閉包</h2><p>函式保留定義時的作用域。嘗試計數器範例，觀察捕獲的變數。</p></div><div><span class="note-index">03</span><h2>從錯誤找到位置</h2><p>型別、作用域與執行錯誤，都附上原始碼位置與函式呼叫堆疊。</p></div></section>
   </main>
-  <footer class="page-footer"><span>itouLang / 語言實驗室</span><span>手寫 Lexer · Recursive-descent Parser · Stack VM</span></footer>
+  <footer class="page-footer"><span>itouLang / 語言實驗室</span><span>C++17 核心 · WebAssembly · 堆疊虛擬機</span></footer>
 </body>
 </html>

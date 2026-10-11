@@ -1,163 +1,196 @@
 # itouLang
 
-一個可以實際執行、編譯與除錯的小型程式語言。**0.2.0** 包含手寫 lexer / parser、詞法作用域解析、漸進式型別檢查、tree-walk 直譯器、stack-based bytecode VM，以及瀏覽器 playground／除錯器。
+**0.3.0：中文語法、C++ 風格結構、C++17 執行核心與 WebAssembly 遊樂場。**
 
-執行核心使用原生 JavaScript ES modules，沒有 runtime 套件依賴；相同核心可跑在 Node.js 和瀏覽器。Playwright 是唯一的開發相依套件。
+itouLang 是一個可以用中文撰寫、執行、編譯與單步除錯的小型語言。詞法分析器、語法分析器、名稱解析、漸進式型別檢查、語法樹直譯器、位元組碼編譯器與虛擬機都由 C++ 實作；CLI 執行原生程式，瀏覽器 Worker 執行同一份核心編譯出的 WebAssembly。
 
-## 立即開始
+## 一小段程式
 
-需求：Node.js 22+。
+```cpp
+整數 平方(整數 數值) {
+  回傳 數值 * 數值;
+}
+
+整數 主程式() {
+  整數 總和 = 0;
+  迴圈 (整數 索引 = 1; 索引 <= 5; ++索引) {
+    如果 (索引 == 3) 繼續;
+    總和 += 平方(索引);
+  }
+  布林 完成 = 總和 > 0 且 總和 < 100;
+  如果 (完成) 喵out << "平方和： " << 總和 << 喵endl;  // 平方和： 46
+  回傳 0;
+}
+```
+
+型別寫在變數、參數與函式名稱前面。支援 `迴圈`、`++`／`--`、`+=` 等複合賦值、`且`／`或`，以及 `函式<整數(整數)>` 與 `[&](整數 數值) -> 整數 { ... }` 閉包。頂層的型別前置 `主程式()` 在全域初始化完成後自動執行；沒有主程式的程式仍可直接寫頂層敘述。
+
+### 中文寫法
+
+| 中文 | 等價英文／符號 | 用途 |
+| --- | --- | --- |
+| `整數`、`浮點數`、`小數`、`數字` | `int`、`double`、`float`、`number` | 數值型別 |
+| `字串`、`布林` | `string`、`bool` | 文字與布林型別 |
+| `自動`、`任意` | `auto`、`any` | 漸進式動態型別 |
+| `無值`、`空` | `void`、`null` | 無回傳值／空值型別 |
+| `主程式` | `main` | 自動呼叫的入口 |
+| `迴圈`、`當` | `for`、`while` | 迴圈 |
+| `如果`、`否則` | `if`、`else` | 條件分支 |
+| `回傳`、`中斷`、`繼續` | `return`、`break`、`continue` | 控制流程 |
+| `真`、`假`、`且`、`或` | `true`、`false`、`&&`、`||` | 布林值與邏輯運算 |
+| `函式<整數(整數)>` | `function<int(int)>` | 結構式函式型別 |
+| `喵in`、`喵out` | `cin`、`cout` | 串流輸入／輸出 |
+| `喵err`、`喵log` | `cerr`、`clog` | 標準錯誤／紀錄輸出 |
+| `喵endl`、`喵getline` | `endl`、`getline` | 換行／整行輸入 |
+
+### 喵串流輸入輸出
+
+```text
+整數 主程式() {
+  整數 左邊;
+  整數 右邊;
+  喵in >> 左邊 >> 右邊;
+  喵out << "總和：" << 左邊 + 右邊 << 喵endl;
+  喵log << "讀取完成" << 喵endl;
+  回傳 0;
+}
+```
+
+輸入 `3 4`，標準輸出為 `總和：7`，標準錯誤輸出為 `讀取完成`。
+`喵out <<` 不會自動加空白或換行；空白寫在字串裡，換行使用 `喵endl`。
+`喵err`／`喵log` 都寫到標準錯誤，不會混進標準輸出。
+
+`喵in >>` 依目標的宣告型別讀入數字、字串或布林值；`自動`／`任意` 接收字串。
+`喵getline(喵in, 文字);` 讀取剩餘的一整行並保留空白。輸入不足或內容不符合型別時會回報語言錯誤。
+型別前置的基本變數可省略初始值：數字預設為 `0`、字串為 `""`、布林為 `假`、空值為 `空`；`自動` 與函式型別仍須給初始值。
+
+CLI 檔案模式從重導向的標準輸入讀取；遊樂場使用「標準輸入」欄位。完整示範見 [examples/streams.itou](examples/streams.itou)。
+
+目前的數值模型仍是有限的 binary64：`整數`、`浮點數`、`小數` 都對應 `number`，所以 `5 / 2` 是 `2.5`。`自動` 對應漸進式的 `any`，尚未做 C++ 的型別推論。這是 C++ 風格的小型語言，尚未支援類別、指標、標頭檔或 C++ 標準函式庫。
+
+## 建置與執行
+
+需求：**CMake 3.20+、C++17 編譯器**。Node.js 22+ 用於建置腳本、JavaScript API 和 playground 伺服器。第一次 CMake configure 會下載固定版本的 [nlohmann/json 3.11.3](https://github.com/nlohmann/json)，用於 AST、bytecode 與 host protocol。
 
 ```sh
-# CLI 不需要 npm install
-node bin/itou.mjs examples/hello.itou
+npm run build
+node bin/itou.mjs examples/cpp.itou
 node bin/itou.mjs --engine tree examples/closures.itou
+node bin/itou.mjs --check examples/typed.itou
 node bin/itou.mjs --disassemble examples/fibonacci.itou
-node bin/itou.mjs --check examples/loops.itou
-node bin/itou.mjs --check --json examples/typed.itou
-node bin/itou.mjs examples/typed.itou
+```
 
-# 開啟瀏覽器 playground（同樣不需要安裝套件）
+也可直接使用原生 CLI，不需要 Node.js：
+
+```sh
+# Linux / macOS
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/itou examples/cpp.itou
+
+# Windows / Visual Studio
+cmake -S . -B build
+cmake --build build --config Release
+build\Release\itou.exe examples/cpp.itou
+```
+
+Windows 的 npm 建置腳本也會尋找 Visual Studio 附帶的 CMake。可用 `CMAKE` 指定 CMake 執行檔，`ITOU_BINARY` 指定 host API／Node launcher 使用的原生 CLI。
+
+### 瀏覽器遊樂場
+
+安裝並啟用 [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)（已驗證 4.0.23）與 Ninja 後：
+
+```sh
+# 在已載入 emsdk_env 的 shell 中
+npm run build:wasm
 npm start
 ```
 
-瀏覽 <http://127.0.0.1:8788>。伺服器只提供靜態檔案；使用者程式在瀏覽器的獨立 Worker 中執行。可用 `PORT` 環境變數換連接埠。
+瀏覽 <http://127.0.0.1:8788>。`web/native/itou.js` 與 `itou.wasm` 是建置產物，不納入 Git；在新 checkout 或重新編譯核心後需重建。可用 `NINJA` 指定 Ninja 執行檔，`PORT` 設定伺服器連接埠。
 
-## 一小段語言
+瀏覽器需支援 WebAssembly exception handling；已以桌面與手機 Chromium 驗證。
 
-中文關鍵字、型別註記與「喵」內建可以混著用，兩個引擎輸出相同：
+- 切換 C++ 的語法樹直譯器／位元組碼虛擬機。
+- 中文型別報告、所有函式的位元組碼與詞法位址。
+- 標準輸入測資欄位；標準輸出與標準錯誤分開顯示。
+- 點行號設中斷點；下一行、單步指令、繼續。
+- 檢查呼叫堆疊、區域／捕獲變數與運算元堆疊。
+- Ctrl／Cmd + Enter 執行，F8 開始／繼續，F10 下一行，F9 切換中斷點。
+- 保留原始碼、明暗主題、下載 `.itou`，支援手機。
+- 停止會終止 Worker，下一次執行建立新的 WebAssembly instance。
 
-```text
-函式 計數器(起始: 數字): 函式(數字) -> 數字 {
-  令 值: 數字 = 起始;
-  回傳 函式(增加: 數字): 數字 {
-    值 = 值 + 增加;
-    回傳 值;
-  };
-}
+伺服器只提供靜態檔案；程式在瀏覽器 Worker 中執行。除錯器使用 VM，中斷點以行號保存。
 
-令 數 = 計數器(10);
-喵(數(1));                        // 11
-喵(數(5));                        // 16
+## 語言能力
 
-令 i = 0;
-當 (i < 5) {
-  i = i + 1;
-  若 (i == 3) { 繼續; }           // 跳過 3
-  喵(喵重複("喵", i));            // 喵 / 喵喵 / 喵喵喵喵 / 喵喵喵喵喵
-}
+- 型別前置宣告、區塊、`如果/否則`、`當`、`迴圈`、`回傳`、`中斷/繼續`。
+- 具名函式、遞迴／互相遞迴、高階函式，以及可修改捕獲變數的閉包。
+- 數字／字串／布林／空值；初始化、賦值、參數與回傳值的靜態及執行期檢查。
+- 結構式函式型別、`任意` 邊界、高階函式契約與回傳控制流程分析。
+- 四則運算、餘數、比較、嚴格相等、短路邏輯與 prefix／postfix 更新。
+- `喵in`／`喵out` 串流，以及 `喵長`、`喵字`、`喵數`、`喵型`、`喵根`、`喵驗` 等內建。
+- 標準輸入：`讀行()`、`讀()`／`喵吃()`、`讀數()`。
+- 中文識別字、中文關鍵字、行註解、巢狀區塊註解、JSON 字串 escape。
+- UTF-16 原始碼位置、錯誤摘要、函式呼叫堆疊、執行步數與資源上限。
 
-喵("完成：", 喵選(數(0) > 20, "大隻貓", "小隻貓"));  // 完成： 小隻貓
-```
-
-英文關鍵字完全等價，可自由混用：`let`＝`令`、`fn`＝`函式`、`if`＝`如果`、`else`＝`否則`、`while`＝`當`、`return`＝`回傳`、`break`＝`中斷`、`continue`＝`繼續`、`and`／`or`＝`且`／`或`、`true`／`false`／`null`＝`真`／`假`／`空`；型別另有 `數字`、`字串`、`布林`、`任意`。
-
-### 已實作
-
-- `let`、賦值、區塊、`if/else`、`while`、`break/continue`、`return`。
-- 具名函式、匿名函式、遞迴、互相遞迴、first-class functions、可修改捕獲變數的閉包。
-- number / string / boolean / null，嚴格執行期型別檢查，不做隱式型別轉換。
-- 可選的 `: number` / `: string` / `: boolean` / `: null` / `: any` 註記，以及結構式 `fn(number) -> number` 型別。
-- 靜態檢查初始化、賦值、參數、回傳值、運算子與 return 控制流程；`any` 邊界另有執行期檢查。
-- 四則運算、餘數、比較、相等判斷、短路 `and/or`。
-- `print`、`len`、`str`、`number`、`type`、`sqrt`、`assert`，以及一整組「喵」內建：`喵`（`print` 別名）、`喵喵`（加喵前綴輸出）、`喵長`／`喵字`／`喵數`／`喵型`／`喵根`／`喵驗`（對應英文別名）、`喵黏`（串接）、`喵重複`（重複字串）、`喵選`（三元運算）、`喵叫`。
-- 英文與中文關鍵字可混用：`令`＝`let`、`函式`＝`fn`、`如果`＝`if`、`當`＝`while`、`回傳`＝`return`、`喵` 輸出。識別字也接受中文。
-- 標準輸入：`讀行()`、`讀()`／`喵吃()`、`讀數()`；host 用 `{ input }` 提供，CLI 自動讀取管線／重導向的 stdin。
-- 行註解、可巢狀區塊註解、JSON 風格字串 escape、Unicode 字串。
-- 靜態名稱解析：未宣告變數、重複 binding、不合法的 return/break/continue。
-- 原始碼 offset、行／列位置、錯誤摘要與函式呼叫堆疊。
-
-完整語法見 [docs/LANGUAGE.md](docs/LANGUAGE.md)，型別規則見 [docs/TYPES.md](docs/TYPES.md)。程式含任何型別註記時，自動在執行前檢查整份程式；未註記的變數／參數保留 `any`，原有無註記程式採動態語意。可用 `--check` 明確檢查任何程式。
-
-## Playground／除錯器
-
-- 切換 **Tree interpreter / Bytecode VM**，執行相同原始碼。
-- 「檢查型別」顯示 binding／函式簽章；`typed.itou` 示範高階函式與帶註記的 closure。
-- 查看所有函式的 bytecode、constant pool 參照與詞法位址。
-- 點行號設定中斷點，開始除錯後可「下一行」、「單步指令」、「繼續」。
-- 即時檢查函式堆疊、區域／外層作用域、捕獲變數與 operand stack。
-- Ctrl / Cmd + Enter：執行；F8：開始／繼續除錯；F10：下一行；編輯器內 F9：切換當前行中斷點。
-- 保存原始碼及明暗主題到此瀏覽器，下載 `.itou`，支援手機尺寸。
-- 「停止」會終止 Worker；重新執行建立新 Worker。修改程式也會結束舊的除錯狀態。
-
-除錯器使用 VM。中斷點依行號儲存；修改前面的行數後，請重新確認中斷點位置。單步規則為遇到行號變更、函式進出或往回跳躍就停下，因此同一行的迴圈也能逐步觀察。
+英文寫法與原有 `令 數值: 數字 = 1;`、`函式 加上(數值: 數字): 數字 { ... }` 可混用。完整語法見 [docs/LANGUAGE.md](docs/LANGUAGE.md)，型別規則見 [docs/TYPES.md](docs/TYPES.md)。
 
 ## CLI
 
 ```sh
-node bin/itou.mjs [--engine vm|tree] [--max-steps N] [--json] file.itou
-node bin/itou.mjs --check file.itou
-node bin/itou.mjs --disassemble file.itou
-node bin/itou.mjs --no-typecheck file.itou
+itou [--engine vm|tree] [--max-steps N] [--json] file.itou
+itou --check file.itou
+itou --disassemble file.itou
+itou --no-typecheck file.itou
 ```
 
-檔名 `-` 代表從 stdin 讀取。`--json` 輸出結果、全域變數與步數；發生錯誤時包含 structured diagnostic 及錯誤前的輸出。成功回傳 0，程式／I/O 錯誤回傳 1，CLI 參數錯誤回傳 64。
+`itou` 代表原生執行檔，也可換成 `node bin/itou.mjs`。檔名 `-` 從標準輸入讀取程式；檔案模式將重導向的標準輸入提供給輸入內建。`--json` 回傳結果或結構化診斷，保留錯誤前的輸出。成功回傳 0，程式／I/O 錯誤回傳 1，參數錯誤回傳 64；主程式的值目前不作為程序結束代碼。
 
-`--check` 執行名稱解析與靜態型別檢查，`--check --json` 回傳型別報告。`--no-typecheck` 只跳過靜態檢查；明確註記的初始化、賦值、參數與回傳值仍會在執行期檢查。高階函式透過 wrapper 檢查後續呼叫，不能藉由 `any` 擦掉既有 contract。
+`--check` 不執行程式。`--no-typecheck` 只跳過靜態 pass，明確型別的 runtime contracts 仍生效。
 
-預設上限：1,000,000 execution steps、100 層函式呼叫、100,000 code units 輸出、65,536 code units 單一字串、256 Ki code units 原始碼。VM 的 instruction step 與直譯器的 AST step 單位不同，不能直接拿步數判斷哪個引擎較快。
+預設上限：1,000,000 execution steps、100 層呼叫、100,000 UTF-16 code units 輸出、65,536 code units 單一字串、256 Ki code units 原始碼。Tree 的 AST step 與 VM 的 instruction step 是不同單位。
 
-## 嵌入其他程式
+## JavaScript host API
 
 ```js
 import { run, check, compile, VM } from './src/index.js';
 
-const result = run('print(6 * 7);', { engine: 'vm' });
-console.log(result.output); // ['42']
-console.log(check('let n: number = 42;').globals); // [{ name: 'n', type: 'number' }]
+console.log(run('整數 數值 = 6; 喵out << 數值 * 7;').stdout); // '42'
+console.log(check('整數 數值 = 42;').globals); // [{ name: '數值', type: 'number' }]
 
-const vm = new VM(compile('let n = 1; print(n + 2);'));
-vm.step();
-console.log(vm.snapshot());
-vm.run();
+const vm = new VM(compile('整數 數值 = 1; 喵out << ++數值;'));
+try {
+  vm.step();
+  console.log(vm.snapshot());
+  vm.run();
+} finally {
+  vm.dispose();
+}
 ```
 
-`run()` 拋出 `LangError`；`error.toJSON()` 提供 phase、message、span、frames。公開 compiler／VM API 預期使用由本套 parser/resolver 產生的 AST／bytecode，沒有對外部手造 bytecode 的驗證器。
+公開 API 保持同步。Node.js 透過背景 Worker 與持續運作的原生核心交換 JSON；瀏覽器模組初始化時載入 WebAssembly，之後同步呼叫 C++。`run()` 的 `onOutput` 在此次執行回傳時依序通知，錯誤前的輸出也會通知。`LangError.toJSON()` 提供 phase、message、span、frames。`VM.dispose()` 可立即釋放原生除錯 session。
+
+執行結果與 VM 快照另提供 `stdout`／`stderr` 原始字串，保留精確的空白與換行；`output` 是標準輸出的文字紀錄，串流以換行分筆，`喵()`／`print()` 每次呼叫為一筆。串流最後一段沒有換行的文字，在結束或錯誤時也會加入 `output`。`LangError.stdout`／`.stderr` 保留錯誤前的串流文字。
+
+API、JSON 與 `喵型()` 使用 `number`、`string` 等標準型別名稱，遊樂場的型別報告與除錯器則顯示「數字」、「字串」等中文名稱。
+
+AST／bytecode API 預期使用本套 parser、resolver、compiler 產生的資料。架構詳見 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ## 測試
 
 ```sh
+npm run build
 npm test
 npm run check
 
-# 安裝開發相依套件與 Chromium 後驗證真實瀏覽器
+# 建置 WebAssembly 後
 npm ci
 npx playwright install chromium --no-shell
 npm run test:browser
 ```
 
-測試涵蓋：
+測試涵蓋語意與診斷、700 個固定 seed 生成程式、300 個 malformed sources、型別契約、原生 CLI、靜態伺服器、C++ 語法及獨立 JavaScript reference 的 frontend／bytecode 比較，另有桌面／手機 Chromium 的 WebAssembly 與除錯器驗證。CI 建置 Windows／Ubuntu 原生版與 Ubuntu WebAssembly 版。
 
-- 語意、錯誤位置、閉包、互相遞迴、宣告前存取、short-circuit、巢狀 break/continue。
-- **500 個固定 seed 的生成程式**：比較兩個引擎的 stdout 與最終全域變數。
-- **200 個帶型別註記的生成程式**，以及靜態診斷、高階函式 contract、`any` 邊界與 return 分析。
-- 300 個生成的 malformed sources：必須回傳語言診斷，避免洩漏 JavaScript stack overflow 等內部錯誤。
-- fuel、遞迴、字串與輸出上限；CLI 真實程序；靜態伺服器路徑範圍。
-- 桌面與手機 Chromium：Worker 執行、範例、bytecode、breakpoint、單步與變數、錯誤、儲存、明暗主題、停止後重啟。
-
-兩個引擎的**控制流程與執行堆疊是分開實作**，frontend、type checker、primitive operations、contracts 與 built-ins 則共用。差異測試特別用來抓 compiler／VM 的 scope、stack、jump 與 contract 傳遞問題；共用部分另外用規格導向案例驗證。
-
-## Benchmark 與架構
-
-```sh
-npm run bench
-npm run bench:types
-```
-
-包含解析／編譯的端到端微型測量，先 warm-up，再比較同一段加總程式的 10 次樣本，輸出 JSON。瀏覽器顯示的時間還包含 Worker 啟動／通訊，與 CLI benchmark 不同。
-
-`bench:types` 另外比較 dynamic／annotated 版本在兩個引擎上的 20 次樣本，包含 frontend 與 runtime contracts；不把型別檢查成本假設為零。
-
-本次驗收結果、實測數據與測量限制見 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)。
-
-```text
-Source → Lexer → Parser → AST → Resolver → Optional type checker
-                                            ├─ Tree interpreter + contracts
-                                            └─ Compiler → VM + contracts → Debug snapshots
-```
-
-關閉頁面或釋放執行個體後，由 JavaScript GC 回收 environments／closures；本版沒有自製 GC、JIT、native code generation 或 host FFI。語言程式無法直接呼叫 JavaScript、檔案或網路 API；這是語言能力限制，不能取代部署不可信程式時的 OS 隔離。架構細節見 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
-
-後續可以加入型別推論、union／generic types、陣列與資料型別、LSP、bytecode verifier，再把 CLI runner 接到 itouOJ。
+`npm run bench` 與 `npm run bench:types` 現在量測 C++ 核心連同 Node host 通訊的端到端時間；[docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) 的 0.1／0.2 數據是舊 JavaScript 核心的歷史紀錄。
 
 MIT License.

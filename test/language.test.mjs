@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { run, analyze, tokenize, compile, disassemble, VM, LangError, formatDiagnostic } from '../src/index.js';
 
-function both(source, expected) {
-  const tree = run(source, { engine: 'tree' });
-  const vm = run(source, { engine: 'vm' });
+function both(source, expected, options = {}) {
+  const tree = run(source, { ...options, engine: 'tree' });
+  const vm = run(source, { ...options, engine: 'vm' });
   assert.deepEqual(vm.output, tree.output);
   assert.deepEqual(vm.globals, tree.globals);
   if (expected) assert.deepEqual(vm.output, expected);
@@ -159,7 +159,7 @@ test('lexer line/column accounting includes CRLF, comments and escaped quotes', 
 test('example programs agree in both engines', () => {
   const folder = new URL('../examples/', import.meta.url);
   for (const name of readdirSync(folder).filter(name => name.endsWith('.itou') && name !== 'error.itou'))
-    both(readFileSync(new URL(name, folder), 'utf8'));
+    both(readFileSync(new URL(name, folder), 'utf8'), undefined, { input: name === 'streams.itou' ? '3 4\n' : '' });
 });
 
 test('bytecode is inspectable and instruction stepping matches normal execution', () => {

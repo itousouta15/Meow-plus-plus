@@ -134,6 +134,9 @@ export class Context {
     if (this.maxDepth > 100) throw new TypeError('maxDepth must be at most 100');
     this.steps = 0;
     this.output = [];
+    this.stdout = '';
+    this.stderr = '';
+    this.pendingOut = '';
     this.outputSize = 0;
     this.onOutput = options.onOutput ?? (() => {});
     this.input = typeof options.input === 'string' ? options.input : '';
@@ -144,9 +147,62 @@ export class Context {
   }
   emit(text, span) {
     if (this.outputSize + text.length + 1 > this.maxOutput) fail('輸出超過上限', span, 'limit');
-    this.output.push(text);
+    this.stdout += text + '\n';
+    const line = this.pendingOut + text;
+    this.pendingOut = '';
+    this.output.push(line);
     this.outputSize += text.length + 1;
-    this.onOutput(text);
+    this.onOutput(line);
+  }
+  write(channel, text, span) {
+    if (this.outputSize + text.length > this.maxOutput) fail('輸出超過上限', span, 'limit');
+    this.outputSize += text.length;
+    if (channel === 'stderr') { this.stderr += text; return; }
+    this.stdout += text;
+    const parts = (this.pendingOut + text).split('\n');
+    this.pendingOut = parts.pop();
+    for (const line of parts) { this.output.push(line); this.onOutput(line); }
+  }
+  finishOutput() {
+    if (this.pendingOut) { this.output.push(this.pendingOut); this.onOutput(this.pendingOut); this.pendingOut = ''; }
+  }
+  extract(env, address, mode, span) {
+    env.get(address, span);
+    const target = env.ancestor(address.depth);
+    if (!target.parent) fail(`無法指派內建函式 '${address.name}'`, span);
+    const type = target.types[address.slot];
+    const supported = mode === 'line' ? ['any', 'string'] : ['any', 'number', 'string', 'boolean'];
+    if (!supported.includes(type.kind)) fail(`喵in 不支援讀入 ${typeName(type)}`, span);
+    let value = mode === 'line' ? this.readLine() : this.readToken();
+    if (value === null) fail('喵in 輸入不足', span);
+    if (value.length > 65536) fail('字串超過 65536 個碼元', span, 'limit');
+    if (type.kind === 'number') {
+      if (!/^-?(?:\d+(?:\.\d+)?)(?:[eE][+-]?\d+)?$/.test(value)) fail(`喵in 預期數字，得到 '${value}'`, span);
+      value = finite(Number(value), span);
+    } else if (type.kind === 'boolean') {
+      if (['true', '真', '1'].includes(value)) value = true;
+      else if (['false', '假', '0'].includes(value)) value = false;
+      else fail(`喵in 預期布林值，得到 '${value}'`, span);
+    }
+    env.set(address, value, span);
+  }
+  readLine() {
+    if (this.readOffset >= this.input.length) return null;
+    let end = this.input.indexOf('\n', this.readOffset);
+    if (end === -1) end = this.input.length;
+    let line = this.input.slice(this.readOffset, end);
+    if (line.endsWith('\r')) line = line.slice(0, -1);
+    this.readOffset = end + 1;
+    return line;
+  }
+  readToken() {
+    let i = this.readOffset;
+    while (i < this.input.length && /\s/.test(this.input[i])) i++;
+    if (i >= this.input.length) { this.readOffset = this.input.length; return null; }
+    const start = i;
+    while (i < this.input.length && !/\s/.test(this.input[i])) i++;
+    this.readOffset = i;
+    return this.input.slice(start, i);
   }
 }
 
@@ -170,24 +226,10 @@ export function builtins(context) {
     return null;
   } };
   const readLine = () => {
-    const input = context.input;
-    if (context.readOffset >= input.length) return null;
-    let end = input.indexOf('\n', context.readOffset);
-    if (end === -1) end = input.length;
-    let line = input.slice(context.readOffset, end);
-    if (line.endsWith('\r')) line = line.slice(0, -1);
-    context.readOffset = end + 1;
-    return line;
+    return context.readLine();
   };
   const readToken = () => {
-    const input = context.input;
-    let i = context.readOffset;
-    while (i < input.length && /\s/.test(input[i])) i++;
-    if (i >= input.length) { context.readOffset = input.length; return null; }
-    const start = i;
-    while (i < input.length && !/\s/.test(input[i])) i++;
-    context.readOffset = i;
-    return input.slice(start, i);
+    return context.readToken();
   };
   const readNumber = span => {
     const token = readToken();

@@ -39,6 +39,12 @@ class Compiler {
       case 'Let': this.expression(node.init); this.emit('INIT', node.slot, node.init.span); break;
       case 'FunctionDecl': case 'Empty': break;
       case 'ExpressionStmt': this.expression(node.expression); this.emit('POP', null, node.span); break;
+      case 'StreamOut':
+        for (const value of node.values) { this.expression(value); this.emit('WRITE', node.channel, value.span); }
+        break;
+      case 'StreamIn':
+        for (const target of node.targets) this.emit('READ', { address: target.address, mode: node.mode }, target.span);
+        break;
       case 'Block':
         this.emit('ENTER', { names: node.layout, types: node.types }, node.span);
         this.scopeDepth++;
@@ -58,14 +64,16 @@ class Compiler {
         } else this.patch(otherwise);
         break;
       }
-      case 'While': {
+      case 'While': case 'For': {
         const start = this.proto.code.length;
         this.expression(node.test);
         const end = this.emit('JUMP_FALSE', null, node.test.span);
-        const loop = { start, scopeDepth: this.scopeDepth, breaks: [] };
+        const loop = { start, scopeDepth: this.scopeDepth, breaks: [], continues: [] };
         this.loops.push(loop);
         this.statement(node.body);
         this.loops.pop();
+        for (const jump of loop.continues) this.patch(jump);
+        if (node.update) { this.expression(node.update); this.emit('POP', null, node.update.span); }
         this.emit('JUMP', start, node.span);
         this.patch(end);
         for (const jump of loop.breaks) this.patch(jump);
@@ -75,8 +83,9 @@ class Compiler {
         const loop = this.loops.at(-1);
         const unwind = this.scopeDepth - loop.scopeDepth;
         if (unwind > 0) this.emit('UNWIND', unwind, node.span);
-        const jump = this.emit('JUMP', node.type === 'Continue' ? loop.start : null, node.span);
+        const jump = this.emit('JUMP', null, node.span);
         if (node.type === 'Break') loop.breaks.push(jump);
+        else loop.continues.push(jump);
         break;
       }
       case 'Return':
@@ -92,6 +101,14 @@ class Compiler {
       case 'Literal': this.constant(node.value, node.span); break;
       case 'Variable': this.emit('LOAD', node.address, node.span); break;
       case 'Assign': this.expression(node.value); this.emit('STORE', node.address, node.nameSpan); break;
+      case 'Update':
+        this.emit('LOAD', node.address, node.nameSpan);
+        if (!node.prefix) this.emit('DUP', null, node.span);
+        this.constant(1, node.span);
+        this.emit('BINARY', node.op === '++' ? '+' : '-', node.span);
+        this.emit('STORE', node.address, node.nameSpan);
+        if (!node.prefix) this.emit('POP', null, node.span);
+        break;
       case 'Unary': this.expression(node.value); this.emit('UNARY', node.op, node.opSpan); break;
       case 'Binary': this.expression(node.left); this.expression(node.right); this.emit('BINARY', node.op, node.opSpan); break;
       case 'Logical': {

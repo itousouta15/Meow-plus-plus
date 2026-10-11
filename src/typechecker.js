@@ -58,6 +58,10 @@ export function checkProgram(program) {
         compatible(value, target, node.value.span, `指派給 '${node.name}'`);
         return target.kind === 'any' ? value : target;
       }
+      case 'Update':
+        if (node.address.depth === scopes.length - 1) fail(`無法指派內建函式 '${node.name}'`, node.nameSpan, 'type');
+        compatible(binding(node), NUMBER, node.span, `運算子 '${node.op}'`);
+        return NUMBER;
       case 'Function': return functionBody(node);
       case 'Unary': {
         const expected = node.op === '!' ? BOOLEAN : NUMBER;
@@ -100,6 +104,15 @@ export function checkProgram(program) {
       case 'FunctionDecl': functionBody(node.fn); return normal();
       case 'Empty': return normal();
       case 'ExpressionStmt': expression(node.expression); return normal();
+      case 'StreamOut': for (const value of node.values) expression(value); return normal();
+      case 'StreamIn':
+        for (const target of node.targets) {
+          if (target.address.depth === scopes.length - 1) fail(`無法指派內建函式 '${target.name}'`, target.span, 'type');
+          const type = binding(target);
+          const supported = node.mode === 'line' ? ['any', 'string'] : ['any', 'number', 'string', 'boolean'];
+          if (!supported.includes(type.kind)) fail(`喵in 不支援讀入 ${typeName(type)}`, target.span, 'type');
+        }
+        return normal();
       case 'Block': return block(node).flow;
       case 'Return':
         compatible(node.value ? expression(node.value) : NULL, expectedReturn, node.value?.span ?? node.span, '回傳值');
@@ -111,8 +124,9 @@ export function checkProgram(program) {
         const left = visit(node.then), right = node.otherwise ? visit(node.otherwise) : normal();
         return node.test.type === 'Literal' && typeof node.test.value === 'boolean' ? (node.test.value ? left : right) : merge(left, right);
       }
-      case 'While': {
+      case 'While': case 'For': {
         compatible(expression(node.test), BOOLEAN, node.test.span, 'while 條件');
+        if (node.update) expression(node.update);
         const body = visit(node.body);
         return { normal: node.test.type === 'Literal' && node.test.value === true ? body.breaks : true, breaks: false, continues: false };
       }

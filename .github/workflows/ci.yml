@@ -12,6 +12,7 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
+      - run: npm run build
       - run: npm run check
       - run: npm test
   browser:
@@ -22,6 +23,10 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '4.0.23'
+      - run: npm run build:wasm
       - run: npx playwright install --with-deps chromium --no-shell
       - run: npm run test:browser
       - uses: actions/upload-artifact@v4

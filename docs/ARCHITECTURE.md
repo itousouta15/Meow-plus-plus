@@ -1,5 +1,61 @@
 # Implementation notes
 
+## C++17 / WebAssembly core (0.3)
+
+The production core lives in `native/include/itou/core.hpp` and `native/src/`:
+
+| Component | Implementation |
+| --- | --- |
+| UTF-8 lexer with UTF-16 positions, C++/legacy parser, lexical resolver | `frontend.cpp` |
+| Gradual types, structural signatures, return-flow analysis | `checker.cpp` |
+| Source-mapped stack bytecode, disassembly | `compiler.cpp` |
+| Values, cells, built-ins, budgets, runtime contracts | `runtime.cpp` |
+| Independent tree evaluator / iterative stack VM | `interpreter.cpp` / `vm.cpp` |
+| JSON API and isolated debug sessions | `api.cpp` |
+| Standalone native CLI / Emscripten C export | `main.cpp` / `wasm.cpp` |
+
+CMake builds `itou_core` and either the native `itou` executable or
+`web/native/itou.js` + `itou.wasm`. nlohmann/json 3.11.3 provides plain-data ASTs,
+prototype metadata and the host protocol; function values and environments are
+native C++ objects, never serialized as cyclic JSON.
+
+`src/index.js` is a synchronous host adapter. On Node.js a background Worker owns
+a persistent `itou --protocol` subprocess. Requests travel as JSON lines and
+responses use a 32 MiB shared buffer; `Atomics.wait` preserves the synchronous
+API without blocking subprocess I/O. In the browser the adapter awaits one
+Emscripten module at initialization, then calls `itou_request` synchronously.
+The browser Worker installs its message handler *before* loading that module
+so requests received during initialization are preserved. Each Worker/module
+owns separate C++ session state. `VM.dispose()` releases a session immediately;
+the host also registers a finalizer.
+
+The C++ `Context` owns an arena of `unique_ptr<Environment>`. Closures hold
+non-owning pointers into that arena, while function wrappers use `shared_ptr`.
+This preserves escaping and recursive closures without environment/function
+ownership cycles. Scopes are retained for the whole execution/debug session,
+then all are freed together by RAII; there is no tracing collector during a run.
+Long loops can therefore retain exited scopes until execution ends.
+
+C++ `for` initializers are represented by a surrounding Block and a For node.
+The compiler patches separate break and continue targets: continue unwinds
+body scopes then executes update; break skips update. Prefix/postfix Update
+nodes lower to LOAD, optionally DUP, CONST, BINARY, STORE, optionally POP.
+Type-first main declarations add an automatic entry call after global code.
+The Chinese entry name `主程式` has the same behavior as `main`. The lexer maps
+`迴圈` / `對於` to for; the parser accepts `函式<整數(整數)>` alongside the
+English structural function spelling. Both frontends reject multiple entries.
+
+StreamIn/StreamOut statements implement `喵in`/`喵out` and their stderr/line-input
+counterparts. READ consults the target environment's declared slot type; WRITE
+serializes one value without adding whitespace. Context retains exact stdout and
+stderr strings, plus completed stdout records and a pending fragment. HALT/end or
+runtime failure publishes the final pending fragment; snapshots retain partial
+stdout without inserting a newline. Stderr never enters stdout's record array.
+
+`src/reference.js` exposes the earlier JavaScript implementation, extended with
+the same syntax. It is a test oracle; CLI, public API and playground use C++.
+The remaining sections describe the shared model and the reference modules.
+
 ## Frontend
 
 `lexer.js` scans source while tracking UTF-16 offsets and line/column positions.
@@ -28,9 +84,9 @@ environment. Calls create a child environment for parameters and body bindings.
 Both engines use the same primitive arithmetic, built-ins, environment cells,
 diagnostics and budgets, but have separate control-flow implementations.
 
-Cycles such as `environment → named function → environment` are normal and
-are reclaimed by the host JavaScript tracing GC once no execution/result keeps
-them reachable. There is no manual memory manager in this version.
+In the JavaScript reference, cycles such as `environment → named function →
+environment` are reclaimed by JavaScript GC. The production C++ ownership model
+is described above.
 
 Typed cells guard initialization and assignment. Function values crossing a
 typed boundary are wrapped with parameter/result contracts; wrappers retain
@@ -56,6 +112,8 @@ instruction representation, not a stable binary on-disk format.
 | --- | --- |
 | CONST, LOAD, CLOSURE | Push a constant, lexical value, or environment-capturing closure |
 | INIT | Guard and pop a value into a previously uninitialized local cell |
+| READ | Extract a token/line using the target cell's declared type, then assign through its guard |
+| WRITE | Pop/display one value and write to the selected stdout/stderr stream |
 | STORE | Guard/store the top value to a lexical cell; leave the guarded value on the stack |
 | POP, DUP | Discard or duplicate the top value |
 | UNARY, BINARY | Consume operand(s), check types, push result |
@@ -75,6 +133,13 @@ operand-stack base and source call location. User-language recursion consumes
 VM frames rather than JavaScript recursive calls. RETURN resets the operand
 stack to the frame's base, even from nested lexical blocks.
 
+The production VM likewise uses explicit C++ frames; the production tree engine
+uses bounded C++ recursion. MSVC builds reserve an 8 MiB native stack and the
+WebAssembly module reserves a 4 MiB stack for the bounded frontend/evaluator.
+The Wasm build uses `-fwasm-exceptions` so exceptions unwind within WebAssembly
+rather than through JavaScript invoke wrappers; the browser must support Wasm
+exception handling. Frontend guards are shared by native and Wasm builds.
+
 ## Debugging
 
 The VM exposes `step()`, `stepLine()`, `continue(breakpoints)` and `snapshot()`.
@@ -92,7 +157,8 @@ execution order need not follow textual line order.
 
 The static server exposes only `web/`, `src/` and `examples/`; it does not accept
 program execution requests. The browser uses a module Worker for compilation
-and execution. Stop terminates that Worker. The UI renders source/output/errors
+and WebAssembly execution. The server provides `application/wasm` and permits
+WebAssembly compilation in CSP through `wasm-unsafe-eval`. Stop terminates that Worker. The UI renders source/output/errors
 with text nodes, persists source locally, and virtualizes gutter rows so large
 files do not create one DOM node for every line.
 

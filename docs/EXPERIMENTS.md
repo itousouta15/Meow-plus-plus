@@ -1,5 +1,18 @@
 # 驗收與效能紀錄
 
+## 0.3.0：C++ 核心與 C++ 風格語法（2026-10-11）
+
+- 使用 Visual Studio / MSVC 19.51 成功建置 C++17 原生 CLI。
+- 使用 Emscripten 4.0.23 成功將同一套核心建置成 WebAssembly；啟用原生 Wasm exception handling，讓語言錯誤與深層語法診斷正常回到 host。
+- `npm test`：**138 項通過**，包含 500 個動態生成程式、200 個帶型別生成程式、300 個 malformed sources，以及新增的 C++ 結構、中文／英文入口、迴圈／繼續、前置／後置更新、閉包、Unicode 路徑、喵串流與獨立 reference 比較。
+- 中文語法支援 `整數 主程式()`、`迴圈`、`自動`、`無值` 與 `函式<整數(整數)>`；驗證中文巢狀函式型別、舊冒號語法混用，以及雙入口拒絕規則。範例與遊樂場介面改為中文。
+- 喵串流涵蓋 `喵in`／`喵out`、`喵err`／`喵log`、`喵endl`／`喵getline`，驗證型別讀取、精確空白／換行、兩個輸出通道、錯誤前的部分輸出、資源上限與除錯快照。CLI 另驗證重導向輸入及沒有結尾換行的原始輸出。
+- `npm run test:browser`：**24 項通過**，在桌面與手機 Chromium 驗證真實 WebAssembly 載入、兩個執行引擎、中文型別報告、型別診斷、單步／中斷點、停止重啟、中文主程式／迴圈、喵串流與標準輸入欄位，以及過深來源的語言診斷與重新執行。
+- `npm run check`：**33 個 JavaScript modules** 完成語法檢查（含本機生成的 Wasm loader）。
+- `git diff --check` 通過。
+
+測試於 Windows 本機執行；CI 已加入 Windows／Ubuntu 原生建置與 Ubuntu WebAssembly 建置，遠端結果需在推送後確認。此版本尚未建立新的效能基線；下方 0.1／0.2 benchmark 使用舊 JavaScript 核心，不能代表 0.3 的效能。
+
 ## 0.2.0：漸進式型別系統驗收（2026-10-10）
 
 - 核心、CLI、server、型別系統測試合計 **108 項通過**。

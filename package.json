@@ -1,12 +1,14 @@
 {
   "name": "itoulang",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "A small language with a tree-walk interpreter, bytecode VM and browser debugger",
+  "description": "A C++-style language with a C++17 core, bytecode VM and WebAssembly debugger",
   "type": "module",
   "engines": { "node": ">=22" },
   "bin": { "itou": "./bin/itou.mjs" },
   "scripts": {
+    "build": "node tools/build.mjs",
+    "build:wasm": "node tools/build.mjs --wasm",
     "start": "node tools/serve.mjs",
     "test": "node --test test/*.test.mjs",
     "test:browser": "playwright test",

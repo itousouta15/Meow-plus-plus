@@ -1,14 +1,14 @@
-fn counter(start) {
-  let value = start;
-  return fn(step) {
-    value = value + step;
-    return value;
+函式<整數(整數)> 計數器(整數 起始) {
+  整數 值 = 起始;
+  回傳 [&](整數 增量) -> 整數 {
+    值 += 增量;
+    回傳 值;
   };
 }
 
-let first = counter(10);
-let second = counter(100);
-print(first(1));
-print(first(5));
-print(second(2));
-print(first(1));
+自動 第一隻 = 計數器(10);
+自動 第二隻 = 計數器(100);
+喵out << 第一隻(1) << 喵endl;
+喵out << 第一隻(5) << 喵endl;
+喵out << 第二隻(2) << 喵endl;
+喵out << 第一隻(1) << 喵endl;

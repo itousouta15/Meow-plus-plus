@@ -1,21 +1,21 @@
-// Optional annotations, higher-order function types and checked closures.
-fn counter(start: number): fn(number) -> number {
-  let value: number = start;
-  return fn(step: number): number {
-    value = value + step;
-    return value;
+// 型別在前的中文宣告、高階函式與帶型別的閉包。
+函式<整數(整數)> 計數器(整數 起始) {
+  整數 值 = 起始;
+  回傳 [&](整數 增量) -> 整數 {
+    值 += 增量;
+    回傳 值;
   };
 }
 
-fn twice(f: fn(number) -> number, value: number): number {
-  return f(f(value));
+整數 做兩次(函式<整數(整數)> 操作, 整數 數值) {
+  回傳 操作(操作(數值));
 }
 
-let count: fn(number) -> number = counter(10);
-print(count(1));
-print(count(5));
-print(twice(fn(n: number): number { return n * 2; }, 3));
+函式<整數(整數)> 計數 = 計數器(10);
+喵out << 計數(1) << 喵endl;
+喵out << 計數(5) << 喵endl;
+喵out << 做兩次([&](整數 數值) -> 整數 { 回傳 數值 * 2; }, 3) << 喵endl;
 
-// Change this initializer to a string to see a compile-time diagnostic.
-let answer: number = 42;
-print("answer:", answer);
+// 將初始值改成字串，可觀察執行前的型別診斷。
+整數 答案 = 42;
+喵out << "答案： " << 答案 << 喵endl;

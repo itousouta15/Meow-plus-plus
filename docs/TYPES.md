@@ -1,25 +1,37 @@
-# 漸進式型別系統（0.2.0）
+# 漸進式型別系統（0.3.0）
 
 ## 寫法
 
 ```text
-let count: number = 0;
-let title: string = "itouLang";
-let enabled: boolean = true;
-let nothing: null = null;
-let dynamic: any = "可以在執行期再確認";
+整數 次數 = 0;
+字串 標題 = "itouLang";
+布林 啟用 = 真;
+空 沒有 = 空;
+自動 動態 = "可以在執行期再確認";
 
-fn add(a: number, b: number): number {
-  return a + b;
+整數 加上(整數 左邊, 整數 右邊) {
+  回傳 左邊 + 右邊;
 }
 
-let operation: fn(number, number) -> number = add;
-print(operation(1, 2));
+函式<整數(整數, 整數)> 操作 = 加上;
+喵(操作(1, 2));
 ```
 
 型別支援 `number`、`string`、`boolean`、`null`、`any`，以及可巢狀的結構式
 function types。函式型別只看參數／結果型別，不看參數名稱。沒有 union、泛型、
 使用者定義 type alias 或 nominal types。
+
+中文拼法的 `整數`／`小數`／`浮點數` 對應 `int`／`float`／`double`，都是 `number`
+別名；`布林` 是 `boolean`，`無值`／`空` 是 `null`，`自動`／`任意` 是 `any`。
+`函式<整數(整數)>`、`function<int(int)>` 與 `函式(數字) -> 數字` 等價，
+不代表實作了 C++ template。API 型別報告使用標準名稱，遊樂場將名稱顯示為中文。
+目前 `自動` 不推論初始值型別，仍可改存其他型別；明確的 `整數` 等型別則有契約。
+原有冒號註記與 `fn` 寫法仍可使用。
+
+型別前置的基本宣告可省略初始值，使用各型別的預設值；`自動`／`任意` 與函式型別
+仍需初始值。`喵in >> 目標;` 依宣告型別讀入數字、字串或布林，任意型別讀入字串。
+`喵getline(喵in, 目標);` 只接受字串或任意型別。兩種輸入都禁止修改內建函式、
+尚未初始化的變數，或將輸入寫入函式／空值型別。輸出串流沿用內建的值顯示規則。
 
 ## 什麼時候檢查
 
@@ -49,8 +61,8 @@ declarations 則有已知 arity／signature；在經過 type checker 的程式�
 錯誤 phase 為 `type`，附來源位置。例如：
 
 ```text
-print("這行不會執行");
-let n: number = "wrong";
+喵("這行不會執行");
+整數 數值 = "錯誤";
 ```
 
 預設會在執行前報出 initializer 型別不相容，因此前面的 print 也不會發生。
@@ -60,9 +72,9 @@ let n: number = "wrong";
 有明確非 null／非 any 結果的函式，正常離開時必須有相容的 return：
 
 ```text
-fn choose(flag: boolean): number {
-  if (flag) return 1;
-  else return 2;
+整數 選擇(布林 條件) {
+  如果 (條件) 回傳 1;
+  否則 回傳 2;
 }
 ```
 
@@ -79,8 +91,8 @@ break 不會使無限迴圈誤判為可離開，但該段原始碼仍須通過�
 靜態階段允許 `any` 指派給已知型別，執行時必須檢查實際值：
 
 ```text
-let dynamic: any = "wrong";
-let checked: number = dynamic; // 靜態可通過，執行到這裡會失敗
+自動 動態 = "錯誤";
+整數 已檢查 = 動態; // 靜態可通過，執行到這裡會失敗
 ```
 
 初始化、賦值、函式參數及回傳都套用契約。錯誤 phase 為 `runtime`，訊息以
@@ -92,9 +104,9 @@ let checked: number = dynamic; // 靜態可通過，執行到這裡會失敗
 `fn(number) -> number` 時，runtime 會建立透明 wrapper：
 
 ```text
-let dynamic: any = fn(n) { return "wrong"; };
-let checked: fn(number) -> number = dynamic;
-checked(1); // 參數通過，回傳值觸發 runtime contract error
+自動 動態 = [&](自動 數值) { 回傳 "錯誤"; };
+函式<整數(整數)> 已檢查 = 動態;
+已檢查(1); // 參數通過，回傳值觸發執行期契約錯誤
 ```
 
 Wrapper 會在之後每次呼叫檢查參數，再在回傳時檢查結果；函式參數／結果本身也
@@ -111,11 +123,11 @@ expression 取得函式時，也會回傳經過 guard 的值。
 
 | 檔案 | 職責 |
 | --- | --- |
-| `src/types.js` | Type representation、signatures、structural assignability |
-| `src/typechecker.js` | AST type pass、return flow、binding/function report |
-| `src/resolver.js` | 記錄各 scope slot 的 annotation metadata |
-| `src/runtime.js` | Cell guards、call/return guards、function wrappers |
-| `src/interpreter.js` / `src/vm.js` | 在各自的執行路徑保留 guards 與來源位置 |
+| `native/src/checker.cpp` | Type representation、signatures、assignability、AST type pass、return flow |
+| `native/src/frontend.cpp` | Parser／resolver，記錄各 scope slot 的 annotation metadata |
+| `native/src/runtime.cpp` | Cell guards、call/return guards、function wrappers |
+| `native/src/interpreter.cpp` / `native/src/vm.cpp` | 在各自的執行路徑保留 guards 與來源位置 |
+| `src/reference.js` 與對應 JS modules | 獨立 JavaScript reference，供差異驗證 |
 | `test/types.test.mjs` | 靜態／動態邊界、控制流程、高階函式與 200 個生成程式 |
 
 Compiler 把型別資訊放在 function prototype 與 ENTER scope metadata。INIT、STORE、

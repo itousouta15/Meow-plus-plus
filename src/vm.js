@@ -1,5 +1,5 @@
 import { LangError, fail } from './diagnostics.js';
-import { Environment, Context, builtins, boolean, unary, binary, prepareCall, finishCall, globalValues, inspect } from './runtime.js';
+import { Environment, Context, builtins, boolean, unary, binary, prepareCall, finishCall, globalValues, inspect, display } from './runtime.js';
 
 export class VM {
   constructor(proto, options = {}) {
@@ -42,6 +42,8 @@ export class VM {
         case 'LOAD': this.stack.push(frame.env.get(arg, span)); break;
         case 'STORE': this.stack[this.stack.length - 1] = frame.env.set(arg, this.peek(), span); break;
         case 'INIT': frame.env.initialize(arg, this.pop(), span); break;
+        case 'WRITE': this.context.write(arg, display(this.pop()), span); break;
+        case 'READ': this.context.extract(frame.env, arg.address, arg.mode, span); break;
         case 'ENTER': frame.env = new Environment(arg.names, frame.env, arg.types); break;
         case 'LEAVE': frame.env = frame.env.parent; break;
         case 'UNWIND': for (let i = 0; i < arg; i++) frame.env = frame.env.parent; break;
@@ -81,11 +83,13 @@ export class VM {
         }
         case 'HALT':
           if (this.frames.length !== 1 || this.stack.length !== 0) throw new Error('VM unbalanced stack at halt');
+          this.context.finishOutput();
           this.done = true;
           break;
         default: throw new Error(`unknown opcode ${op}`);
       }
     } catch (error) {
+      this.context.finishOutput();
       if (error instanceof LangError && error.frames.length === 0)
         error.frames = this.frames.slice(1).map(f => ({ name: f.proto.name, span: f.callSpan }));
       this.error = error;
@@ -97,7 +101,7 @@ export class VM {
   run() {
     while (!this.done) this.step();
     if (this.error) throw this.error;
-    return { output: [...this.context.output], globals: globalValues(this.globals), steps: this.context.steps, engine: 'vm' };
+    return { output: [...this.context.output], stdout: this.context.stdout, stderr: this.context.stderr, globals: globalValues(this.globals), steps: this.context.steps, engine: 'vm' };
   }
   // A source step stops at a line change, a call/return, or a backward jump.
   // This also makes progress observable for loops written on a single line.
@@ -135,6 +139,8 @@ export class VM {
       frames: this.frames.map(f => ({ name: f.proto.name, ip: f.ip, line: f.proto.code[f.ip]?.span.line ?? f.callSpan.line })),
       scopes,
       output: [...this.context.output],
+      stdout: this.context.stdout,
+      stderr: this.context.stderr,
       globals: globalValues(this.globals),
     };
   }

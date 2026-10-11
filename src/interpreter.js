@@ -1,5 +1,5 @@
 import { LangError, fail } from './diagnostics.js';
-import { Environment, Context, builtins, boolean, unary, binary, prepareCall, finishCall, globalValues } from './runtime.js';
+import { Environment, Context, builtins, boolean, unary, binary, prepareCall, finishCall, globalValues, display } from './runtime.js';
 import { ANY } from './types.js';
 
 export class Interpreter {
@@ -31,14 +31,21 @@ export class Interpreter {
       case 'FunctionDecl': case 'Empty': return null;
       case 'Block': return this.body(node.body, new Environment(node.layout, env, node.types));
       case 'ExpressionStmt': this.expression(node.expression, env); return null;
+      case 'StreamOut':
+        for (const value of node.values) this.context.write(node.channel, display(this.expression(value, env)), value.span);
+        return null;
+      case 'StreamIn':
+        for (const target of node.targets) { this.context.tick(target.span); this.context.extract(env, target.address, node.mode, target.span); }
+        return null;
       case 'If':
         if (boolean(this.expression(node.test, env), node.test.span)) return this.statement(node.then, env);
         return node.otherwise ? this.statement(node.otherwise, env) : null;
-      case 'While':
+      case 'While': case 'For':
         while (boolean(this.expression(node.test, env), node.test.span)) {
           const signal = this.statement(node.body, env);
           if (signal?.type === 'Return') return signal;
           if (signal?.type === 'Break') break;
+          if (node.update) this.expression(node.update, env);
         }
         return null;
       case 'Return': return { type: 'Return', value: node.value ? this.expression(node.value, env) : null, span: node.span };
@@ -54,6 +61,11 @@ export class Interpreter {
       case 'Assign': {
         const value = this.expression(node.value, env);
         return env.set(node.address, value, node.nameSpan);
+      }
+      case 'Update': {
+        const old = env.get(node.address, node.nameSpan);
+        const value = env.set(node.address, binary(node.op === '++' ? '+' : '-', old, 1, node.span), node.nameSpan);
+        return node.prefix ? value : old;
       }
       case 'Unary': return unary(node.op, this.expression(node.value, env), node.opSpan);
       case 'Binary': {
@@ -90,7 +102,8 @@ export class Interpreter {
     }
   }
   run() {
-    this.body(this.program.body, this.globals);
-    return { output: [...this.context.output], globals: globalValues(this.globals), steps: this.context.steps, engine: 'tree' };
+    try { this.body(this.program.body, this.globals); }
+    finally { this.context.finishOutput(); }
+    return { output: [...this.context.output], stdout: this.context.stdout, stderr: this.context.stderr, globals: globalValues(this.globals), steps: this.context.steps, engine: 'tree' };
   }
 }

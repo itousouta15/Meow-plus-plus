@@ -3,3 +3,6 @@
 /playwright-report/
 /coverage/
 *.log
+/build/
+/build-wasm/
+/web/native/
